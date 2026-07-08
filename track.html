@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <title>Protocol Tracker – Track</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- PWA hooks -->
+  <!-- PWA -->
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0f172a">
   <script>
@@ -50,19 +50,30 @@
       margin-top: 12px;
     }
 
-    /* Cycle dialog */
-    .cycle-btn {
+    /* Floating buttons */
+    .float-buttons {
       position: fixed;
       bottom: 20px;
       right: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      z-index: 50;
+    }
+    .float-btn {
       background: #38bdf8;
       color: #0f172a;
       padding: 14px 20px;
       border-radius: 14px;
       font-weight: 600;
       cursor: pointer;
-      z-index: 20;
+      text-align: center;
     }
+    .float-btn.secondary {
+      background: #0ea5e9;
+    }
+
+    /* Cycle dialog */
     .cycle-dialog {
       position: fixed;
       inset: 0;
@@ -240,9 +251,10 @@
   </style>
 </head>
 <body>
+
   <div class="header" id="header-title">Loading...</div>
 
-  <!-- Weekly nav + view -->
+  <!-- Weekly -->
   <div id="week-nav" class="week-nav hidden">
     <button id="prev-week">‹</button>
     <span id="week-label">Week 1</span>
@@ -250,7 +262,7 @@
   </div>
   <div id="calendar-view" class="calendar-view hidden"></div>
 
-  <!-- Monthly nav + view -->
+  <!-- Monthly -->
   <div id="month-nav" class="month-nav hidden">
     <button id="prev-month">‹</button>
     <span id="month-label">Month</span>
@@ -258,19 +270,23 @@
   </div>
   <div id="month-view" class="month-view hidden"></div>
 
-  <!-- Simple list view (mainly for oral) -->
+  <!-- Oral list -->
   <div class="content">
     <div id="dose-list"></div>
     <div class="add-btn" id="add-dose">Add New Dose (manual)</div>
   </div>
 
-  <!-- Cycle setup (injection only) -->
-  <div id="cycle-btn" class="cycle-btn">Set Cycle</div>
+  <!-- Floating buttons -->
+  <div class="float-buttons">
+    <div id="view-protocol" class="float-btn secondary">My Protocol</div>
+    <div id="add-protocol" class="float-btn">Add Protocol</div>
+  </div>
 
+  <!-- Cycle dialog -->
   <div id="cycle-dialog" class="cycle-dialog hidden">
     <div class="cycle-box">
       <div class="cycle-header">
-        <strong>Injection Cycle Setup</strong>
+        <strong>Injection Protocol Setup</strong>
         <button id="close-cycle">×</button>
       </div>
 
@@ -281,190 +297,3 @@
       <div id="compound-list"></div>
 
       <button id="add-compound" class="add-compound-btn">＋ Add Compound</button>
-
-      <button id="save-cycle" class="save-cycle-btn">Save Cycle & Generate</button>
-    </div>
-  </div>
-
-  <script>
-    // Read type from URL
-    const params = new URLSearchParams(window.location.search);
-    const type = params.get("type") || "dose";
-
-    const header = document.getElementById("header-title");
-    const doseList = document.getElementById("dose-list");
-
-    if (type === "injection") {
-      header.textContent = "Injection Schedule";
-    } else {
-      header.textContent = "Oral Supplement Schedule";
-      document.getElementById("cycle-btn").classList.add("hidden");
-    }
-
-    // Simple manual add (mostly for oral)
-    const sample = {
-      injection: [],
-      oral: [
-        { name: "Anastrozole", amount: "0.5 mg", time: "09:00", notes: "With food" }
-      ]
-    };
-
-    function renderManualList() {
-      doseList.innerHTML = "";
-      const arr = type === "injection" ? sample.injection : sample.oral;
-      arr.forEach(d => {
-        const card = document.createElement("div");
-        card.className = "dose-card";
-        card.innerHTML = `
-          <strong>${d.name}</strong><br>
-          ${d.amount}<br>
-          ${d.time}<br>
-          <small>${d.notes || ""}</small>
-        `;
-        doseList.appendChild(card);
-      });
-    }
-
-    renderManualList();
-
-    document.getElementById("add-dose").onclick = () => {
-      const name = prompt("Compound name:");
-      const amount = prompt("Amount:");
-      const time = prompt("Time (HH:MM):");
-      const notes = prompt("Notes:");
-      if (name && amount && time) {
-        sample[type].push({ name, amount, time, notes });
-        renderManualList();
-      }
-    };
-
-    /* ===== Injection cycle, schedule, storage, colors, calendars ===== */
-
-    const compoundColors = [
-      "#38bdf8","#34d399","#fbbf24","#f87171","#a78bfa",
-      "#fb7185","#4ade80","#facc15","#2dd4bf","#60a5fa"
-    ];
-
-    function saveCycleToStorage(length, compounds, schedule) {
-      const data = { length, compounds, schedule };
-      localStorage.setItem("injectionCycle", JSON.stringify(data));
-    }
-
-    function loadCycleFromStorage() {
-      const raw = localStorage.getItem("injectionCycle");
-      if (!raw) return null;
-      return JSON.parse(raw);
-    }
-
-    function generateWeeklySchedule(length, compounds) {
-      const schedule = [];
-      const days = Number(length);
-      for (let day = 1; day <= days; day++) {
-        const dailyEntries = compounds.map(c => {
-          const dailyMg = (Number(c.mg) / 7).toFixed(2);
-          return {
-            name: c.name,
-            mg: dailyMg,
-            color: c.color,
-            day
-          };
-        });
-        schedule.push({ day, items: dailyEntries });
-      }
-      return schedule;
-    }
-
-    // Weekly calendar
-    let currentWeek = 0;
-    let weeks = [];
-
-    function chunkIntoWeeks(schedule) {
-      const w = [];
-      for (let i = 0; i < schedule.length; i += 7) {
-        w.push(schedule.slice(i, i + 7));
-      }
-      return w;
-    }
-
-    function renderWeek(weekData, weekIndex) {
-      const calendar = document.getElementById("calendar-view");
-      const label = document.getElementById("week-label");
-      calendar.innerHTML = "";
-      label.textContent = `Week ${weekIndex + 1}`;
-      weekData.forEach(day => {
-        const div = document.createElement("div");
-        div.className = "calendar-day";
-        let html = `<strong>Day ${day.day}</strong>`;
-        day.items.forEach(item => {
-          html += `
-            <div class="calendar-dose" style="border-left:4px solid ${item.color};padding-left:6px;">
-              <span style="color:${item.color};font-weight:600;">${item.name}</span><br>
-              ${item.mg} mg
-            </div>
-          `;
-        });
-        div.innerHTML = html;
-        calendar.appendChild(div);
-      });
-    }
-
-    document.getElementById("prev-week").onclick = () => {
-      if (currentWeek > 0) {
-        currentWeek--;
-        renderWeek(weeks[currentWeek], currentWeek);
-      }
-    };
-    document.getElementById("next-week").onclick = () => {
-      if (currentWeek < weeks.length - 1) {
-        currentWeek++;
-        renderWeek(weeks[currentWeek], currentWeek);
-      }
-    };
-
-    // Monthly calendar
-    let months = {};
-    let monthKeys = [];
-    let currentMonthIndex = 0;
-
-    function buildMonthlyCalendar(schedule) {
-      const m = {};
-      const startDate = new Date();
-      startDate.setHours(0,0,0,0);
-      schedule.forEach((day, index) => {
-        const date = new Date(startDate);
-        date.setDate(startDate.getDate() + index);
-        const key = `${date.getFullYear()}-${date.getMonth()}`;
-        if (!m[key]) m[key] = [];
-        m[key].push({
-          date,
-          items: day.items,
-          dayNumber: day.day
-        });
-      });
-      return m;
-    }
-
-    function renderMonth(monthKey) {
-      const monthView = document.getElementById("month-view");
-      const monthLabel = document.getElementById("month-label");
-      const days = months[monthKey];
-      if (!days) return;
-      monthView.innerHTML = "";
-      const firstDay = days[0].date;
-      const monthName = firstDay.toLocaleString("default", { month: "long" });
-      monthLabel.textContent = `${monthName} ${firstDay.getFullYear()}`;
-      const offset = firstDay.getDay();
-      for (let i = 0; i < offset; i++) {
-        const blank = document.createElement("div");
-        blank.className = "month-day";
-        monthView.appendChild(blank);
-      }
-      days.forEach(day => {
-        const div = document.createElement("div");
-        div.className = "month-day";
-        let html = `<strong>${day.date.getDate()}</strong>`;
-        day.items.forEach(item => {
-          html += `
-            <div class="month-dose" style="border-left:4px solid ${item.color};padding-left:4px;">
-              <span style="color:${item.color};font-weight:600;">${item.name}</span><br>
-              ${item.mg} mg
