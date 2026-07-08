@@ -5,14 +5,6 @@
 <title>Protocol Tracker – Track</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0f172a">
-<script>
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("service-worker.js");
-  }
-</script>
-
 <style>
   body {
     margin: 0;
@@ -160,7 +152,7 @@
   </div>
 
   <div class="item-row">
-    <input id="cycle-start" type="date" placeholder="Start date">
+    <input id="cycle-start" type="date">
   </div>
 
   <div class="save-btn" id="save-protocol">Build Protocol</div>
