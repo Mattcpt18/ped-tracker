@@ -61,7 +61,6 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
-    z-index: 50;
   }
 
   .corner-btn {
@@ -82,66 +81,58 @@
 </head>
 
 <body>
-  <!-- CORNER BUTTONS -->
-  <div class="corner-buttons">
-    <div id="remove-protocol" class="corner-btn">Remove</div>
-    <div id="export-protocol" class="corner-btn">Export</div>
-    <div id="edit-protocol" class="corner-btn">Edit</div>
+
+<div class="corner-buttons">
+  <div id="remove-protocol" class="corner-btn">Remove</div>
+  <div id="export-protocol" class="corner-btn">Export</div>
+  <div id="edit-protocol" class="corner-btn">Edit</div>
+</div>
+
+<div class="container">
+  <h1>Protocol Tracker</h1>
+
+  <div class="main-btn" onclick="location.href='track.html?view=myprotocol'">
+    My Protocol
   </div>
 
-  <div class="container">
-    <h1>Protocol Tracker</h1>
-
-    <div class="main-btn" onclick="location.href='track.html?view=myprotocol'">
-      My Protocol
-    </div>
-
-    <div class="main-btn" onclick="location.href='track.html?view=addprotocol'">
-      Add Protocol
-    </div>
+  <div class="main-btn" onclick="location.href='track.html?view=addprotocol'">
+    Add Protocol
   </div>
+</div>
 
 <script>
-  // Remove saved protocol
-  document.getElementById("remove-protocol").onclick = () => {
-    if (confirm("Remove saved protocol?")) {
-      localStorage.removeItem("protocol");
-      alert("Protocol removed.");
-    }
-  };
+document.getElementById("remove-protocol").onclick = () => {
+  if (confirm("Remove saved protocol?")) {
+    localStorage.removeItem("protocol");
+    alert("Protocol removed.");
+  }
+};
 
-  // Export protocol to CSV (Excel-compatible)
-  document.getElementById("export-protocol").onclick = () => {
-    const saved = localStorage.getItem("protocol");
-    if (!saved) {
-      alert("No protocol saved.");
-      return;
-    }
+document.getElementById("export-protocol").onclick = () => {
+  const saved = localStorage.getItem("protocol");
+  if (!saved) return alert("No protocol saved.");
 
-    const items = JSON.parse(saved);
-    let csv = "Item,Weekly Dose,Frequency,Per mL,mL per dose\n";
-    items.forEach(i => {
-      csv += `${i.name},${i.weekly},${i.freq},${i.perml},${i.mlPerDose.toFixed(2)}\n`;
-    });
+  const items = JSON.parse(saved);
+  let csv = "Item,Weekly Dose,Frequency,Per mL,mL per dose\n";
+  items.forEach(i => {
+    csv += `${i.name},${i.weekly},${i.freq},${i.perml},${i.mlPerDose.toFixed(2)}\n`;
+  });
 
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "protocol.csv";
-    a.click();
-    URL.revokeObjectURL(url);
-  };
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "protocol.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+};
 
-  // Edit protocol (go to track with edit view)
-  document.getElementById("edit-protocol").onclick = () => {
-    const saved = localStorage.getItem("protocol");
-    if (!saved) {
-      alert("No protocol saved to edit.");
-      return;
-    }
-    location.href = "track.html?view=editprotocol";
-  };
+document.getElementById("edit-protocol").onclick = () => {
+  const saved = localStorage.getItem("protocol");
+  if (!saved) return alert("No protocol saved to edit.");
+  location.href = "track.html?view=editprotocol";
+};
 </script>
+
 </body>
 </html>
