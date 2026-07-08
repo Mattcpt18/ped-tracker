@@ -48,6 +48,32 @@
     color: #0f172a;
   }
 
+  /* CORNER BUTTONS */
+  .corner-buttons {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 50;
+  }
+
+  .corner-btn {
+    background:#1e293b;
+    border:1px solid #334155;
+    padding:8px 12px;
+    border-radius:8px;
+    font-size:14px;
+    cursor:pointer;
+    text-align:center;
+  }
+
+  .corner-btn:hover {
+    background:#38bdf8;
+    color:#0f172a;
+  }
+
   /* ADD PROTOCOL SCREEN */
   .screen {
     display: none;
@@ -113,6 +139,12 @@
 </head>
 <body>
 
+<!-- CORNER BUTTONS -->
+<div class="corner-buttons">
+  <div id="remove-protocol" class="corner-btn">Remove</div>
+  <div id="export-protocol" class="corner-btn">Export</div>
+</div>
+
 <!-- MAIN SCREEN -->
 <div id="main-screen" class="center-screen">
   <div id="my-protocol-btn" class="main-btn">My Protocol</div>
@@ -135,11 +167,30 @@
 </div>
 
 <script>
-/* NAVIGATION */
+/* URL ROUTING */
+const params = new URLSearchParams(window.location.search);
+const view = params.get("view");
+
+/* SCREENS */
 const mainScreen = document.getElementById("main-screen");
 const addScreen = document.getElementById("add-screen");
 const calendarScreen = document.getElementById("calendar-screen");
 
+/* ROUTE HANDLING */
+if (view === "addprotocol") {
+  mainScreen.style.display = "none";
+  addScreen.style.display = "block";
+}
+if (view === "myprotocol") {
+  const saved = localStorage.getItem("protocol");
+  if (saved) {
+    loadCalendar(JSON.parse(saved));
+    mainScreen.style.display = "none";
+    calendarScreen.style.display = "block";
+  }
+}
+
+/* MAIN BUTTONS */
 document.getElementById("add-protocol-btn").onclick = () => {
   mainScreen.style.display = "none";
   addScreen.style.display = "block";
@@ -156,6 +207,45 @@ document.getElementById("my-protocol-btn").onclick = () => {
   calendarScreen.style.display = "block";
 };
 
+/* CORNER BUTTONS */
+document.getElementById("remove-protocol").onclick = () => {
+  if (confirm("Remove saved protocol?")) {
+    localStorage.removeItem("protocol");
+    alert("Protocol removed.");
+  }
+};
+
+document.getElementById("export-protocol").onclick = () => {
+  const saved = localStorage.getItem("protocol");
+  if (!saved) {
+    alert("No protocol saved.");
+    return;
+  }
+
+  const items = JSON.parse(saved);
+
+  let csv = "Item,Weekly Dose,Frequency,Per mL,mL per dose\n";
+  items.forEach(i => {
+    csv += `${i.name},${i.weekly},${i.freq},${i.perml},${i.mlPerDose.toFixed(2)}\n`;
+  });
+
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "protocol.csv";
+  a.click();
+
+  URL.revokeObjectURL(url);
+};
+
+/* COLORS */
+const itemColors = [
+  "#38bdf8","#34d399","#fbbf24","#f87171","#a78bfa",
+  "#fb7185","#4ade80","#f97316","#2dd4bf","#60a5fa"
+];
+
 /* BUILD ADD PROTOCOL FORM */
 const itemList = document.getElementById("item-list");
 
@@ -163,10 +253,10 @@ for (let i = 0; i < 10; i++) {
   const row = document.createElement("div");
   row.className = "item-row";
   row.innerHTML = `
-    <input placeholder="Item name (you fill later)">
-    <input placeholder="Weekly dose">
+    <input placeholder="Item name">
+    <input placeholder="Weekly dose (mg)">
     <input placeholder="Frequency per week">
-    <input placeholder="Dose per mL">
+    <input placeholder="Dose per mL (mg/mL)">
   `;
   itemList.appendChild(row);
 }
@@ -175,19 +265,24 @@ for (let i = 0; i < 10; i++) {
 document.getElementById("save-protocol").onclick = () => {
   const items = [];
 
-  document.querySelectorAll(".item-row").forEach(row => {
+  document.querySelectorAll(".item-row").forEach((row, index) => {
     const fields = row.querySelectorAll("input");
     const name = fields[0].value.trim();
-    const weekly = fields[1].value.trim();
-    const freq = fields[2].value.trim();
-    const perml = fields[3].value.trim();
+    const weekly = Number(fields[1].value.trim());
+    const freq = Number(fields[2].value.trim());
+    const perml = Number(fields[3].value.trim());
 
     if (name && weekly && freq && perml) {
+
+      const mlPerDose = weekly / (freq * perml);
+
       items.push({
         name,
-        weekly: Number(weekly),
-        freq: Number(freq),
-        perml: Number(perml)
+        weekly,
+        freq,
+        perml,
+        mlPerDose,
+        color: itemColors[index]
       });
     }
   });
@@ -209,16 +304,24 @@ function loadCalendar(items) {
   const grid = document.getElementById("calendar-grid");
   grid.innerHTML = "";
 
-  const days = 30; // default 30-day calendar
+  const days = 30;
+
+  items.forEach(item => {
+    item.interval = Math.floor(7 / item.freq);
+  });
+
   for (let d = 1; d <= days; d++) {
     const box = document.createElement("div");
     box.className = "day-box";
     box.innerHTML = `<strong>Day ${d}</strong>`;
 
     items.forEach(item => {
-      if ((d % Math.floor(7 / item.freq)) === 0) {
+      if (d % item.interval === 0) {
         box.innerHTML += `
-          <div>${item.name}<br>${item.weekly}mg/week</div>
+          <div style="border-left:4px solid ${item.color}; padding-left:6px; margin-bottom:6px;">
+            <span style="color:${item.color}; font-weight:600;">${item.name}</span><br>
+            ${item.mlPerDose.toFixed(2)} mL per dose
+          </div>
         `;
       }
     });
