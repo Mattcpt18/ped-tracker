@@ -152,6 +152,7 @@
   </div>
 
   <div class="item-row">
+    <label style="display:block; margin-bottom:6px;">Start Date</label>
     <input id="cycle-start" type="date">
   </div>
 
@@ -201,17 +202,25 @@ else if (view === "myprotocol") {
 }
 
 document.getElementById("add-protocol-btn").onclick = () => openAddScreen(false);
+
 document.getElementById("my-protocol-btn").onclick = () => {
   const saved = localStorage.getItem("protocol");
-  if (!saved) return alert("No protocol saved.");
-  loadCalendar(JSON.parse(saved));
+  if (!saved) {
+    alert("No protocol saved.");
+    return;
+  }
+  const data = JSON.parse(saved);
+  loadCalendar(data);
   mainScreen.style.display = "none";
   calendarScreen.style.display = "block";
 };
 
 document.getElementById("edit-protocol").onclick = () => {
   const saved = localStorage.getItem("protocol");
-  if (!saved) return alert("No protocol saved to edit.");
+  if (!saved) {
+    alert("No protocol saved to edit.");
+    return;
+  }
   openAddScreen(true);
 };
 
@@ -225,7 +234,10 @@ document.getElementById("remove-protocol").onclick = () => {
 
 document.getElementById("export-protocol").onclick = () => {
   const saved = localStorage.getItem("protocol");
-  if (!saved) return alert("No protocol saved.");
+  if (!saved) {
+    alert("No protocol saved.");
+    return;
+  }
 
   const data = JSON.parse(saved);
   const items = data.items;
@@ -291,8 +303,13 @@ function openAddScreen(isEdit) {
 
 document.getElementById("save-protocol").onclick = () => {
   const items = [];
+
   document.querySelectorAll(".item-row").forEach((row, index) => {
     const fields = row.querySelectorAll("input");
+
+    // Skip rows that are not compound rows (cycle weeks + start date)
+    if (fields.length !== 4) return;
+
     const name = fields[0].value.trim();
     const weekly = Number(fields[1].value.trim());
     const freq = Number(fields[2].value.trim());
@@ -311,15 +328,30 @@ document.getElementById("save-protocol").onclick = () => {
     }
   });
 
-  if (items.length === 0) return alert("Add at least one item.");
+  if (items.length === 0) {
+    alert("Add at least one compound.");
+    return;
+  }
 
   const cycleWeeks = Number(document.getElementById("cycle-weeks").value.trim());
   const cycleStart = document.getElementById("cycle-start").value;
 
-  if (!cycleWeeks || cycleWeeks <= 0) return alert("Enter cycle duration in weeks.");
-  if (!cycleStart) return alert("Select a start date.");
+  if (!cycleWeeks || cycleWeeks <= 0) {
+    alert("Enter cycle duration in weeks.");
+    return;
+  }
 
-  const protocolData = { cycleWeeks, cycleStart, items };
+  if (!cycleStart) {
+    alert("Select a start date.");
+    return;
+  }
+
+  const protocolData = {
+    cycleWeeks,
+    cycleStart,
+    items
+  };
+
   localStorage.setItem("protocol", JSON.stringify(protocolData));
 
   alert("Protocol built.");
@@ -357,7 +389,6 @@ function loadCalendar(data) {
     });
 
     const isToday = currentDate.toDateString() === today.toDateString();
-
     if (isToday) currentDayNumber = d;
 
     box.style.background = isToday ? "#38bdf8" : "#1e293b";
