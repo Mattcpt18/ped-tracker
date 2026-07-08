@@ -107,4 +107,255 @@
     font-weight: 600;
     cursor: pointer;
     margin-top: 20px;
-    text
+    text-align: center;
+  }
+
+  /* CALENDAR */
+  .calendar {
+    display: none;
+    padding: 20px;
+  }
+
+  .calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+  }
+
+  .day-box {
+    background: #1e293b;
+    border: 1px solid #334155;
+    padding: 10px;
+    border-radius: 10px;
+    min-height: 120px;
+    font-size: 12px;
+  }
+
+  .day-box strong {
+    display: block;
+    margin-bottom: 6px;
+  }
+</style>
+</head>
+<body>
+
+<!-- CORNER BUTTONS -->
+<div class="corner-buttons">
+  <div id="remove-protocol" class="corner-btn">Remove</div>
+  <div id="export-protocol" class="corner-btn">Export</div>
+  <div id="edit-protocol" class="corner-btn">Edit</div>
+</div>
+
+<!-- MAIN SCREEN -->
+<div id="main-screen" class="center-screen">
+  <div id="my-protocol-btn" class="main-btn">My Protocol</div>
+  <div id="add-protocol-btn" class="main-btn">Add Protocol</div>
+</div>
+
+<!-- ADD / EDIT SCREEN -->
+<div id="add-screen" class="screen">
+  <h2 id="form-title">Add Protocol</h2>
+
+  <div id="item-list"></div>
+
+  <div class="save-btn" id="save-protocol">Save Protocol</div>
+</div>
+
+<!-- CALENDAR SCREEN -->
+<div id="calendar-screen" class="calendar">
+  <h2>My Protocol Calendar</h2>
+  <div id="calendar-grid" class="calendar-grid"></div>
+</div>
+
+<script>
+/* URL ROUTING */
+const params = new URLSearchParams(window.location.search);
+const view = params.get("view");
+
+/* SCREENS */
+const mainScreen = document.getElementById("main-screen");
+const addScreen = document.getElementById("add-screen");
+const calendarScreen = document.getElementById("calendar-screen");
+const formTitle = document.getElementById("form-title");
+
+/* COLORS */
+const itemColors = [
+  "#38bdf8","#34d399","#fbbf24","#f87171","#a78bfa",
+  "#fb7185","#4ade80","#f97316","#2dd4bf","#60a5fa"
+];
+
+/* ROUTE HANDLING */
+if (view === "addprotocol") {
+  openAddScreen(false);
+}
+if (view === "myprotocol") {
+  const saved = localStorage.getItem("protocol");
+  if (saved) {
+    loadCalendar(JSON.parse(saved));
+    mainScreen.style.display = "none";
+    calendarScreen.style.display = "block";
+  }
+}
+if (view === "editprotocol") {
+  openAddScreen(true);
+}
+
+/* MAIN BUTTONS */
+document.getElementById("add-protocol-btn").onclick = () => openAddScreen(false);
+document.getElementById("my-protocol-btn").onclick = () => {
+  const saved = localStorage.getItem("protocol");
+  if (!saved) {
+    alert("No protocol saved yet.");
+    return;
+  }
+  loadCalendar(JSON.parse(saved));
+  mainScreen.style.display = "none";
+  calendarScreen.style.display = "block";
+};
+
+/* CORNER BUTTONS */
+document.getElementById("remove-protocol").onclick = () => {
+  if (confirm("Remove saved protocol?")) {
+    localStorage.removeItem("protocol");
+    alert("Protocol removed.");
+  }
+};
+
+document.getElementById("export-protocol").onclick = () => {
+  const saved = localStorage.getItem("protocol");
+  if (!saved) {
+    alert("No protocol saved.");
+    return;
+  }
+
+  const items = JSON.parse(saved);
+
+  let csv = "Item,Weekly Dose,Frequency,Per mL,mL per dose\n";
+  items.forEach(i => {
+    csv += `${i.name},${i.weekly},${i.freq},${i.perml},${i.mlPerDose.toFixed(2)}\n`;
+  });
+
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "protocol.csv";
+  a.click();
+
+  URL.revokeObjectURL(url);
+};
+
+document.getElementById("edit-protocol").onclick = () => openAddScreen(true);
+
+/* BUILD ADD / EDIT SCREEN */
+function openAddScreen(isEdit) {
+  mainScreen.style.display = "none";
+  calendarScreen.style.display = "none";
+  addScreen.style.display = "block";
+
+  formTitle.textContent = isEdit ? "Edit Protocol" : "Add Protocol";
+
+  const itemList = document.getElementById("item-list");
+  itemList.innerHTML = "";
+
+  if (isEdit) {
+    const saved = JSON.parse(localStorage.getItem("protocol") || "[]");
+
+    saved.forEach((item, index) => {
+      const row = document.createElement("div");
+      row.className = "item-row";
+      row.innerHTML = `
+        <input value="${item.name}">
+        <input value="${item.weekly}">
+        <input value="${item.freq}">
+        <input value="${item.perml}">
+      `;
+      itemList.appendChild(row);
+    });
+
+  } else {
+    for (let i = 0; i < 10; i++) {
+      const row = document.createElement("div");
+      row.className = "item-row";
+      row.innerHTML = `
+        <input placeholder="Item name">
+        <input placeholder="Weekly dose (mg)">
+        <input placeholder="Frequency per week">
+        <input placeholder="Dose per mL (mg/mL)">
+      `;
+      itemList.appendChild(row);
+    }
+  }
+}
+
+/* SAVE PROTOCOL */
+document.getElementById("save-protocol").onclick = () => {
+  const items = [];
+
+  document.querySelectorAll(".item-row").forEach((row, index) => {
+    const fields = row.querySelectorAll("input");
+    const name = fields[0].value.trim();
+    const weekly = Number(fields[1].value.trim());
+    const freq = Number(fields[2].value.trim());
+    const perml = Number(fields[3].value.trim());
+
+    if (name && weekly && freq && perml) {
+      const mlPerDose = weekly / (freq * perml);
+      items.push({
+        name,
+        weekly,
+        freq,
+        perml,
+        mlPerDose,
+        color: itemColors[index]
+      });
+    }
+  });
+
+  if (items.length === 0) {
+    alert("Add at least one item.");
+    return;
+  }
+
+  localStorage.setItem("protocol", JSON.stringify(items));
+
+  alert("Protocol saved.");
+  addScreen.style.display = "none";
+  mainScreen.style.display = "flex";
+};
+
+/* CALENDAR GENERATION */
+function loadCalendar(items) {
+  const grid = document.getElementById("calendar-grid");
+  grid.innerHTML = "";
+
+  const days = 30;
+
+  items.forEach(item => {
+    item.interval = Math.ceil(7 / item.freq);
+  });
+
+  for (let d = 1; d <= days; d++) {
+    const box = document.createElement("div");
+    box.className = "day-box";
+    box.innerHTML = `<strong>Day ${d}</strong>`;
+
+    items.forEach(item => {
+      if ((d - 1) % item.interval === 0) {
+        box.innerHTML += `
+          <div style="border-left:4px solid ${item.color}; padding-left:6px; margin-bottom:6px;">
+            <span style="color:${item.color}; font-weight:600;">${item.name}</span><br>
+            ${item.mlPerDose.toFixed(2)} mL per dose
+          </div>
+        `;
+      }
+    });
+
+    grid.appendChild(box);
+  }
+}
+</script>
+
+</body>
+</html>
