@@ -21,7 +21,6 @@
     font-family: system-ui, sans-serif;
   }
 
-  /* MAIN SCREEN */
   .center-screen {
     display: flex;
     flex-direction: column;
@@ -48,7 +47,6 @@
     color: #0f172a;
   }
 
-  /* CORNER BUTTONS */
   .corner-buttons {
     position: fixed;
     top: 20px;
@@ -74,7 +72,6 @@
     color:#0f172a;
   }
 
-  /* ADD / EDIT SCREEN */
   .screen {
     display: none;
     padding: 20px;
@@ -110,7 +107,6 @@
     text-align: center;
   }
 
-  /* CALENDAR */
   .calendar {
     display: none;
     padding: 20px;
@@ -155,9 +151,7 @@
 <!-- ADD / EDIT SCREEN -->
 <div id="add-screen" class="screen">
   <h2 id="form-title">Add Protocol</h2>
-
   <div id="item-list"></div>
-
   <div class="save-btn" id="save-protocol">Save Protocol</div>
 </div>
 
@@ -168,39 +162,35 @@
 </div>
 
 <script>
-/* URL ROUTING */
 const params = new URLSearchParams(window.location.search);
 const view = params.get("view");
 
-/* SCREENS */
 const mainScreen = document.getElementById("main-screen");
 const addScreen = document.getElementById("add-screen");
 const calendarScreen = document.getElementById("calendar-screen");
 const formTitle = document.getElementById("form-title");
+const itemList = document.getElementById("item-list");
 
-/* COLORS */
 const itemColors = [
   "#38bdf8","#34d399","#fbbf24","#f87171","#a78bfa",
   "#fb7185","#4ade80","#f97316","#2dd4bf","#60a5fa"
 ];
 
-/* ROUTE HANDLING */
+// Routing on load
 if (view === "addprotocol") {
   openAddScreen(false);
-}
-if (view === "myprotocol") {
+} else if (view === "myprotocol") {
   const saved = localStorage.getItem("protocol");
   if (saved) {
     loadCalendar(JSON.parse(saved));
     mainScreen.style.display = "none";
     calendarScreen.style.display = "block";
   }
-}
-if (view === "editprotocol") {
+} else if (view === "editprotocol") {
   openAddScreen(true);
 }
 
-/* MAIN BUTTONS */
+// Main buttons
 document.getElementById("add-protocol-btn").onclick = () => openAddScreen(false);
 document.getElementById("my-protocol-btn").onclick = () => {
   const saved = localStorage.getItem("protocol");
@@ -213,7 +203,7 @@ document.getElementById("my-protocol-btn").onclick = () => {
   calendarScreen.style.display = "block";
 };
 
-/* CORNER BUTTONS */
+// Corner buttons
 document.getElementById("remove-protocol").onclick = () => {
   if (confirm("Remove saved protocol?")) {
     localStorage.removeItem("protocol");
@@ -227,42 +217,40 @@ document.getElementById("export-protocol").onclick = () => {
     alert("No protocol saved.");
     return;
   }
-
   const items = JSON.parse(saved);
-
   let csv = "Item,Weekly Dose,Frequency,Per mL,mL per dose\n";
   items.forEach(i => {
     csv += `${i.name},${i.weekly},${i.freq},${i.perml},${i.mlPerDose.toFixed(2)}\n`;
   });
-
   const blob = new Blob([csv], { type: "text/csv" });
   const url = URL.createObjectURL(blob);
-
   const a = document.createElement("a");
   a.href = url;
   a.download = "protocol.csv";
   a.click();
-
   URL.revokeObjectURL(url);
 };
 
-document.getElementById("edit-protocol").onclick = () => openAddScreen(true);
+document.getElementById("edit-protocol").onclick = () => {
+  const saved = localStorage.getItem("protocol");
+  if (!saved) {
+    alert("No protocol saved to edit.");
+    return;
+  }
+  openAddScreen(true);
+};
 
-/* BUILD ADD / EDIT SCREEN */
+// Open add/edit screen
 function openAddScreen(isEdit) {
   mainScreen.style.display = "none";
   calendarScreen.style.display = "none";
   addScreen.style.display = "block";
-
   formTitle.textContent = isEdit ? "Edit Protocol" : "Add Protocol";
-
-  const itemList = document.getElementById("item-list");
   itemList.innerHTML = "";
 
   if (isEdit) {
     const saved = JSON.parse(localStorage.getItem("protocol") || "[]");
-
-    saved.forEach((item, index) => {
+    saved.forEach(item => {
       const row = document.createElement("div");
       row.className = "item-row";
       row.innerHTML = `
@@ -273,7 +261,6 @@ function openAddScreen(isEdit) {
       `;
       itemList.appendChild(row);
     });
-
   } else {
     for (let i = 0; i < 10; i++) {
       const row = document.createElement("div");
@@ -289,10 +276,9 @@ function openAddScreen(isEdit) {
   }
 }
 
-/* SAVE PROTOCOL */
+// Save protocol
 document.getElementById("save-protocol").onclick = () => {
   const items = [];
-
   document.querySelectorAll(".item-row").forEach((row, index) => {
     const fields = row.querySelectorAll("input");
     const name = fields[0].value.trim();
@@ -308,7 +294,7 @@ document.getElementById("save-protocol").onclick = () => {
         freq,
         perml,
         mlPerDose,
-        color: itemColors[index]
+        color: itemColors[index % itemColors.length]
       });
     }
   });
@@ -319,17 +305,15 @@ document.getElementById("save-protocol").onclick = () => {
   }
 
   localStorage.setItem("protocol", JSON.stringify(items));
-
   alert("Protocol saved.");
   addScreen.style.display = "none";
   mainScreen.style.display = "flex";
 };
 
-/* CALENDAR GENERATION */
+// Calendar
 function loadCalendar(items) {
   const grid = document.getElementById("calendar-grid");
   grid.innerHTML = "";
-
   const days = 30;
 
   items.forEach(item => {
@@ -356,6 +340,5 @@ function loadCalendar(items) {
   }
 }
 </script>
-
 </body>
 </html>
