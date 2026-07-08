@@ -130,6 +130,11 @@
     background:#38bdf8;
     color:#0f172a;
   }
+
+  #notify-status {
+    margin-bottom: 20px;
+    opacity: 0.8;
+  }
 </style>
 </head>
 
@@ -156,12 +161,18 @@
     <input id="cycle-start" type="date">
   </div>
 
+  <div class="item-row">
+    <label style="display:block; margin-bottom:6px;">Enable Notifications</label>
+    <input id="cycle-notify" type="checkbox">
+  </div>
+
   <div class="save-btn" id="save-protocol">Build Protocol</div>
 </div>
 
 <!-- CALENDAR SCREEN -->
 <div id="calendar-screen" class="calendar">
   <h2>My Protocol Calendar</h2>
+  <div id="notify-status"></div>
   <div id="calendar-grid" class="calendar-grid"></div>
 
   <div class="progress-bar">
@@ -195,7 +206,8 @@ else if (view === "editprotocol") openAddScreen(true);
 else if (view === "myprotocol") {
   const saved = localStorage.getItem("protocol");
   if (saved) {
-    loadCalendar(JSON.parse(saved));
+    const data = JSON.parse(saved);
+    loadCalendar(data);
     mainScreen.style.display = "none";
     calendarScreen.style.display = "block";
   }
@@ -209,7 +221,14 @@ document.getElementById("my-protocol-btn").onclick = () => {
     alert("No protocol saved.");
     return;
   }
+
   const data = JSON.parse(saved);
+
+  if (data.cycleNotify) {
+    requestNotificationPermission();
+    checkTodayForItems(data);
+  }
+
   loadCalendar(data);
   mainScreen.style.display = "none";
   calendarScreen.style.display = "block";
@@ -243,7 +262,8 @@ document.getElementById("export-protocol").onclick = () => {
   const items = data.items;
 
   let csv = "Start Date," + data.cycleStart + "\n";
-  csv += "Cycle Duration (weeks)," + data.cycleWeeks + "\n\n";
+  csv += "Cycle Duration (weeks)," + data.cycleWeeks + "\n";
+  csv += "Notifications Enabled," + (data.cycleNotify ? "Yes" : "No") + "\n\n";
   csv += "Item,Weekly Dose,Frequency,Per mL,mL per dose\n";
 
   items.forEach(i => {
@@ -273,6 +293,7 @@ function openAddScreen(isEdit) {
 
     document.getElementById("cycle-weeks").value = savedData.cycleWeeks;
     document.getElementById("cycle-start").value = savedData.cycleStart;
+    document.getElementById("cycle-notify").checked = !!savedData.cycleNotify;
 
     savedItems.forEach(item => {
       const row = document.createElement("div");
@@ -307,7 +328,7 @@ document.getElementById("save-protocol").onclick = () => {
   document.querySelectorAll(".item-row").forEach((row, index) => {
     const fields = row.querySelectorAll("input");
 
-    // Skip rows that are not compound rows (cycle weeks + start date)
+    // Skip non-compound rows (cycle weeks, start date, notify)
     if (fields.length !== 4) return;
 
     const name = fields[0].value.trim();
@@ -335,6 +356,7 @@ document.getElementById("save-protocol").onclick = () => {
 
   const cycleWeeks = Number(document.getElementById("cycle-weeks").value.trim());
   const cycleStart = document.getElementById("cycle-start").value;
+  const cycleNotify = document.getElementById("cycle-notify").checked;
 
   if (!cycleWeeks || cycleWeeks <= 0) {
     alert("Enter cycle duration in weeks.");
@@ -349,6 +371,7 @@ document.getElementById("save-protocol").onclick = () => {
   const protocolData = {
     cycleWeeks,
     cycleStart,
+    cycleNotify,
     items
   };
 
@@ -368,6 +391,11 @@ function loadCalendar(data) {
 
   const grid = document.getElementById("calendar-grid");
   grid.innerHTML = "";
+
+  document.getElementById("notify-status").innerText =
+    data.cycleNotify
+      ? "Notifications enabled for this cycle"
+      : "Notifications disabled";
 
   items.forEach(item => {
     item.interval = Math.ceil(7 / item.freq);
@@ -416,6 +444,44 @@ function loadCalendar(data) {
   const progressFill = document.getElementById("progress-fill");
   const progressPercent = (currentDayNumber / totalDays) * 100;
   progressFill.style.width = progressPercent + "%";
+}
+
+/* Notifications */
+
+function requestNotificationPermission() {
+  if ("Notification" in window && Notification.permission === "default") {
+    Notification.requestPermission();
+  }
+}
+
+function sendReminderNotification(message) {
+  if ("Notification" in window && Notification.permission === "granted") {
+    new Notification("Protocol Reminder", {
+      body: message
+    });
+  }
+}
+
+function checkTodayForItems(data) {
+  const items = data.items;
+  const startDate = new Date(data.cycleStart);
+  const today = new Date();
+
+  const daysSinceStart = Math.floor(
+    (today - startDate) / (1000 * 60 * 60 * 24)
+  );
+
+  if (daysSinceStart < 0) return;
+  if (daysSinceStart >= data.cycleWeeks * 7) return;
+
+  items.forEach(item => {
+    const interval = Math.ceil(7 / item.freq);
+    if (daysSinceStart % interval === 0) {
+      sendReminderNotification(
+        `You scheduled ${item.name} today. Check your protocol calendar.`
+      );
+    }
+  });
 }
 </script>
 
