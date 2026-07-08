@@ -1,555 +1,232 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Protocol Tracker – Track</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<title>Protocol Tracker – Track</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- PWA -->
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#0f172a">
-  <script>
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("service-worker.js");
-    }
-  </script>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f172a">
+<script>
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("service-worker.js");
+  }
+</script>
 
-  <style>
-    body {
-      margin: 0;
-      background: #020617;
-      color: #e5e7eb;
-      font-family: system-ui, sans-serif;
-    }
-    .header {
-      padding: 16px;
-      background: #0f172a;
-      border-bottom: 1px solid #334155;
-      text-align: center;
-      font-size: 20px;
-    }
-    .content {
-      padding: 12px;
-    }
-    .dose-card {
-      background: #1e293b;
-      border: 1px solid #334155;
-      padding: 12px;
-      border-radius: 12px;
-      margin-bottom: 10px;
-      font-size: 14px;
-    }
-    .add-btn {
-      padding: 12px;
-      background: #38bdf8;
-      color: #0f172a;
-      border-radius: 12px;
-      text-align: center;
-      font-weight: 600;
-      cursor: pointer;
-      margin-top: 12px;
-    }
+<style>
+  body {
+    margin: 0;
+    background: #020617;
+    color: #e5e7eb;
+    font-family: system-ui, sans-serif;
+  }
 
-    /* Floating buttons */
-    .float-buttons {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      z-index: 50;
-    }
-    .float-btn {
-      background: #38bdf8;
-      color: #0f172a;
-      padding: 14px 20px;
-      border-radius: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      text-align: center;
-    }
-    .float-btn.secondary {
-      background: #0ea5e9;
-    }
+  /* MAIN SCREEN */
+  .center-screen {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    gap: 20px;
+  }
 
-    /* Cycle dialog */
-    .cycle-dialog {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.65);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 30;
-    }
-    .cycle-box {
-      background: #1e293b;
-      padding: 20px;
-      width: 90%;
-      max-width: 420px;
-      border-radius: 16px;
-      border: 1px solid #334155;
-    }
-    .cycle-header {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 12px;
-      font-size: 16px;
-    }
-    .cycle-header button {
-      background: transparent;
-      border: none;
-      color: #e5e7eb;
-      font-size: 20px;
-      cursor: pointer;
-    }
-    .cycle-box label {
-      display: block;
-      font-size: 13px;
-      margin-top: 8px;
-      margin-bottom: 4px;
-    }
-    #cycle-length {
-      width: 100%;
-      padding: 8px;
-      border-radius: 10px;
-      background: #0f172a;
-      border: 1px solid #334155;
-      color: #e5e7eb;
-    }
-    #compound-list .compound-row {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 10px;
-      margin-top: 6px;
-    }
-    .compound-row select,
-    .compound-row input {
-      flex: 1;
-      padding: 8px;
-      border-radius: 10px;
-      background: #0f172a;
-      border: 1px solid #334155;
-      color: #e5e7eb;
-    }
-    .add-compound-btn {
-      width: 100%;
-      padding: 10px;
-      background: #0ea5e9;
-      border-radius: 10px;
-      border: none;
-      color: #0f172a;
-      font-weight: 600;
-      cursor: pointer;
-      margin-top: 8px;
-    }
-    .save-cycle-btn {
-      width: 100%;
-      padding: 12px;
-      background: #38bdf8;
-      border-radius: 12px;
-      border: none;
-      color: #0f172a;
-      font-weight: 600;
-      cursor: pointer;
-      margin-top: 12px;
-    }
+  .main-btn {
+    background: #1e293b;
+    border: 1px solid #334155;
+    padding: 18px 26px;
+    border-radius: 14px;
+    font-size: 20px;
+    color: #e5e7eb;
+    cursor: pointer;
+    width: 70%;
+    text-align: center;
+  }
 
-    /* Weekly calendar */
-    .week-nav {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: #0f172a;
-      padding: 10px 14px;
-      border-bottom: 1px solid #334155;
-      font-size: 16px;
-    }
-    .week-nav button {
-      background: #1e293b;
-      border: 1px solid #334155;
-      color: #e5e7eb;
-      padding: 6px 10px;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-    .calendar-view {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 8px;
-      padding: 10px;
-      transition: transform 0.25s ease;
-    }
-    .calendar-day {
-      background: #1e293b;
-      border: 1px solid #334155;
-      padding: 8px;
-      border-radius: 10px;
-      min-height: 120px;
-      font-size: 12px;
-    }
-    .calendar-day strong {
-      font-size: 14px;
-      display: block;
-      margin-bottom: 6px;
-    }
-    .calendar-dose {
-      background: #0f172a;
-      border-radius: 6px;
-      padding: 6px;
-      margin-bottom: 6px;
-      font-size: 12px;
-    }
+  .main-btn:hover {
+    background: #38bdf8;
+    color: #0f172a;
+  }
 
-    /* Monthly calendar */
-    .month-nav {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: #0f172a;
-      padding: 10px 14px;
-      border-bottom: 1px solid #334155;
-      font-size: 16px;
-    }
-    .month-nav button {
-      background: #1e293b;
-      border: 1px solid #334155;
-      color: #e5e7eb;
-      padding: 6px 10px;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-    .month-view {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 6px;
-      padding: 10px;
-    }
-    .month-day {
-      background: #1e293b;
-      border: 1px solid #334155;
-      padding: 8px;
-      border-radius: 10px;
-      min-height: 100px;
-      font-size: 12px;
-    }
-    .month-day strong {
-      font-size: 13px;
-      display: block;
-      margin-bottom: 4px;
-    }
-    .month-dose {
-      background: #0f172a;
-      border-radius: 6px;
-      padding: 4px;
-      margin-bottom: 4px;
-      font-size: 11px;
-    }
+  /* ADD PROTOCOL SCREEN */
+  .screen {
+    display: none;
+    padding: 20px;
+  }
 
-    .hidden { display: none; }
-  </style>
+  .item-row {
+    background: #1e293b;
+    border: 1px solid #334155;
+    padding: 12px;
+    border-radius: 12px;
+    margin-bottom: 12px;
+  }
+
+  .item-row input {
+    width: 100%;
+    padding: 10px;
+    margin-top: 6px;
+    border-radius: 10px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    color: #e5e7eb;
+  }
+
+  .save-btn {
+    background: #38bdf8;
+    color: #0f172a;
+    padding: 16px;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 20px;
+    text-align: center;
+  }
+
+  /* CALENDAR */
+  .calendar {
+    display: none;
+    padding: 20px;
+  }
+
+  .calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+  }
+
+  .day-box {
+    background: #1e293b;
+    border: 1px solid #334155;
+    padding: 10px;
+    border-radius: 10px;
+    min-height: 120px;
+    font-size: 12px;
+  }
+
+  .day-box strong {
+    display: block;
+    margin-bottom: 6px;
+  }
+</style>
 </head>
 <body>
 
-  <div class="header" id="header-title">Loading...</div>
+<!-- MAIN SCREEN -->
+<div id="main-screen" class="center-screen">
+  <div id="my-protocol-btn" class="main-btn">My Protocol</div>
+  <div id="add-protocol-btn" class="main-btn">Add Protocol</div>
+</div>
 
-  <!-- Weekly -->
-  <div id="week-nav" class="week-nav hidden">
-    <button id="prev-week">‹</button>
-    <span id="week-label">Week 1</span>
-    <button id="next-week">›</button>
-  </div>
-  <div id="calendar-view" class="calendar-view hidden"></div>
+<!-- ADD PROTOCOL SCREEN -->
+<div id="add-screen" class="screen">
+  <h2>Add Protocol</h2>
 
-  <!-- Monthly -->
-  <div id="month-nav" class="month-nav hidden">
-    <button id="prev-month">‹</button>
-    <span id="month-label">Month</span>
-    <button id="next-month">›</button>
-  </div>
-  <div id="month-view" class="month-view hidden"></div>
+  <div id="item-list"></div>
 
-  <!-- Oral list -->
-  <div class="content">
-    <div id="dose-list"></div>
-    <div class="add-btn" id="add-dose">Add New Dose (manual)</div>
-  </div>
+  <div class="save-btn" id="save-protocol">Save Protocol</div>
+</div>
 
-  <!-- Floating buttons -->
-  <div class="float-buttons">
-    <div id="view-protocol" class="float-btn secondary">My Protocol</div>
-    <div id="add-protocol" class="float-btn">Add Protocol</div>
-  </div>
+<!-- CALENDAR SCREEN -->
+<div id="calendar-screen" class="calendar">
+  <h2>My Protocol Calendar</h2>
+  <div id="calendar-grid" class="calendar-grid"></div>
+</div>
 
-  <!-- Cycle dialog -->
-  <div id="cycle-dialog" class="cycle-dialog hidden">
-    <div class="cycle-box">
-      <div class="cycle-header">
-        <strong>Injection Protocol Setup</strong>
-        <button id="close-cycle">×</button>
-      </div>
+<script>
+/* NAVIGATION */
+const mainScreen = document.getElementById("main-screen");
+const addScreen = document.getElementById("add-screen");
+const calendarScreen = document.getElementById("calendar-screen");
 
-      <label>Cycle Length (days)</label>
-      <input id="cycle-length" type="number" min="1" placeholder="e.g. 56">
+document.getElementById("add-protocol-btn").onclick = () => {
+  mainScreen.style.display = "none";
+  addScreen.style.display = "block";
+};
 
-      <label>Add Compounds (mg per week)</label>
-      <div id="compound-list"></div>
+document.getElementById("my-protocol-btn").onclick = () => {
+  const saved = localStorage.getItem("protocol");
+  if (!saved) {
+    alert("No protocol saved yet.");
+    return;
+  }
+  loadCalendar(JSON.parse(saved));
+  mainScreen.style.display = "none";
+  calendarScreen.style.display = "block";
+};
 
-      <button id="add-compound" class="add-compound-btn">＋ Add Compound</button>
+/* BUILD ADD PROTOCOL FORM */
+const itemList = document.getElementById("item-list");
 
-      <button id="save-cycle" class="save-cycle-btn">Save Protocol</button>
-    </div>
-  </div>
+for (let i = 0; i < 10; i++) {
+  const row = document.createElement("div");
+  row.className = "item-row";
+  row.innerHTML = `
+    <input placeholder="Item name (you fill later)">
+    <input placeholder="Weekly dose">
+    <input placeholder="Frequency per week">
+    <input placeholder="Dose per mL">
+  `;
+  itemList.appendChild(row);
+}
 
-  <script>
-    /* TYPE */
-    const params = new URLSearchParams(window.location.search);
-    const type = params.get("type") || "dose";
+/* SAVE PROTOCOL */
+document.getElementById("save-protocol").onclick = () => {
+  const items = [];
 
-    const header = document.getElementById("header-title");
-    const doseList = document.getElementById("dose-list");
+  document.querySelectorAll(".item-row").forEach(row => {
+    const fields = row.querySelectorAll("input");
+    const name = fields[0].value.trim();
+    const weekly = fields[1].value.trim();
+    const freq = fields[2].value.trim();
+    const perml = fields[3].value.trim();
 
-    if (type === "injection") {
-      header.textContent = "Injection Protocol";
-    } else {
-      header.textContent = "Oral Supplement Schedule";
-      document.getElementById("view-protocol").classList.add("hidden");
-      document.getElementById("add-protocol").classList.add("hidden");
+    if (name && weekly && freq && perml) {
+      items.push({
+        name,
+        weekly: Number(weekly),
+        freq: Number(freq),
+        perml: Number(perml)
+      });
     }
+  });
 
-    /* ORAL LIST */
-    const sample = {
-      injection: [],
-      oral: [
-        { name: "Anastrozole", amount: "0.5 mg", time: "09:00", notes: "With food" }
-      ]
-    };
+  if (items.length === 0) {
+    alert("Add at least one item.");
+    return;
+  }
 
-    function renderManualList() {
-      doseList.innerHTML = "";
-      const arr = type === "injection" ? sample.injection : sample.oral;
-      arr.forEach(d => {
-        const card = document.createElement("div");
-        card.className = "dose-card";
-        card.innerHTML = `
-          <strong>${d.name}</strong><br>
-          ${d.amount}<br>
-          ${d.time}<br>
-          <small>${d.notes || ""}</small>
+  localStorage.setItem("protocol", JSON.stringify(items));
+
+  alert("Protocol saved.");
+  addScreen.style.display = "none";
+  mainScreen.style.display = "flex";
+};
+
+/* CALENDAR GENERATION */
+function loadCalendar(items) {
+  const grid = document.getElementById("calendar-grid");
+  grid.innerHTML = "";
+
+  const days = 30; // default 30-day calendar
+  for (let d = 1; d <= days; d++) {
+    const box = document.createElement("div");
+    box.className = "day-box";
+    box.innerHTML = `<strong>Day ${d}</strong>`;
+
+    items.forEach(item => {
+      if ((d % Math.floor(7 / item.freq)) === 0) {
+        box.innerHTML += `
+          <div>${item.name}<br>${item.weekly}mg/week</div>
         `;
-        doseList.appendChild(card);
-      });
-    }
-
-    renderManualList();
-
-    document.getElementById("add-dose").onclick = () => {
-      const name = prompt("Compound name:");
-      const amount = prompt("Amount:");
-      const time = prompt("Time (HH:MM):");
-      const notes = prompt("Notes:");
-      if (name && amount && time) {
-        sample[type].push({ name, amount, time, notes });
-        renderManualList();
       }
-    };
-
-    /* STORAGE */
-    const compoundColors = [
-      "#38bdf8","#34d399","#fbbf24","#f87171","#a78bfa",
-      "#fb7185","#4ade80","#facc15","#2dd4bf","#60a5fa"
-    ];
-
-    function saveCycleToStorage(length, compounds, schedule) {
-      const data = { length, compounds, schedule };
-      localStorage.setItem("injectionCycle", JSON.stringify(data));
-    }
-
-    function loadCycleFromStorage() {
-      const raw = localStorage.getItem("injectionCycle");
-      if (!raw) return null;
-      return JSON.parse(raw);
-    }
-
-    /* SCHEDULE GEN */
-    function generateWeeklySchedule(length, compounds) {
-      const schedule = [];
-      const days = Number(length);
-      for (let day = 1; day <= days; day++) {
-        const dailyEntries = compounds.map(c => {
-          const dailyMg = (Number(c.mg) / 7).toFixed(2);
-          return {
-            name: c.name,
-            mg: dailyMg,
-            color: c.color,
-            day
-          };
-        });
-        schedule.push({ day, items: dailyEntries });
-      }
-      return schedule;
-    }
-
-    /* WEEKLY */
-    let currentWeek = 0;
-    let weeks = [];
-
-    function chunkIntoWeeks(schedule) {
-      const w = [];
-      for (let i = 0; i < schedule.length; i += 7) {
-        w.push(schedule.slice(i, i + 7));
-      }
-      return w;
-    }
-
-    function renderWeek(weekData, weekIndex) {
-      const calendar = document.getElementById("calendar-view");
-      const label = document.getElementById("week-label");
-      calendar.innerHTML = "";
-      label.textContent = `Week ${weekIndex + 1}`;
-      weekData.forEach(day => {
-        const div = document.createElement("div");
-        div.className = "calendar-day";
-        let html = `<strong>Day ${day.day}</strong>`;
-        day.items.forEach(item => {
-          html += `
-            <div class="calendar-dose" style="border-left:4px solid ${item.color};padding-left:6px;">
-              <span style="color:${item.color};font-weight:600;">${item.name}</span><br>
-              ${item.mg} mg
-            </div>
-          `;
-        });
-        div.innerHTML = html;
-        calendar.appendChild(div);
-      });
-    }
-
-    document.getElementById("prev-week").onclick = () => {
-      if (currentWeek > 0) {
-        currentWeek--;
-        renderWeek(weeks[currentWeek], currentWeek);
-      }
-    };
-    document.getElementById("next-week").onclick = () => {
-      if (currentWeek < weeks.length - 1) {
-        currentWeek++;
-        renderWeek(weeks[currentWeek], currentWeek);
-      }
-    };
-
-    /* MONTHLY */
-    let months = {};
-    let monthKeys = [];
-    let currentMonthIndex = 0;
-
-    function buildMonthlyCalendar(schedule) {
-      const m = {};
-      const startDate = new Date();
-      startDate.setHours(0,0,0,0);
-      schedule.forEach((day, index) => {
-        const date = new Date(startDate);
-        date.setDate(startDate.getDate() + index);
-        const key = `${date.getFullYear()}-${date.getMonth()}`;
-        if (!m[key]) m[key] = [];
-        m[key].push({
-          date,
-          items: day.items,
-          dayNumber: day.day
-        });
-      });
-      return m;
-    }
-
-    function renderMonth(monthKey) {
-      const monthView = document.getElementById("month-view");
-      const monthLabel = document.getElementById("month-label");
-      const days = months[monthKey];
-      if (!days) return;
-      monthView.innerHTML = "";
-      const firstDay = days[0].date;
-      const monthName = firstDay.toLocaleString("default", { month: "long" });
-      monthLabel.textContent = `${monthName} ${firstDay.getFullYear()}`;
-      const offset = firstDay.getDay();
-      for (let i = 0; i < offset; i++) {
-        const blank = document.createElement("div");
-        blank.className = "month-day";
-        monthView.appendChild(blank);
-      }
-      days.forEach(day => {
-        const div = document.createElement("div");
-        div.className = "month-day";
-        let html = `<strong>${day.date.getDate()}</strong>`;
-        day.items.forEach(item => {
-          html += `
-            <div class="month-dose" style="border-left:4px solid ${item.color};padding-left:4px;">
-              <span style="color:${item.color};font-weight:600;">${item.name}</span><br>
-              ${item.mg} mg
-            </div>
-          `;
-        });
-        div.innerHTML = html;
-        monthView.appendChild(div);
-      });
-    }
-
-    document.getElementById("prev-month").onclick = () => {
-      if (currentMonthIndex > 0) {
-        currentMonthIndex--;
-        renderMonth(monthKeys[currentMonthIndex]);
-      }
-    };
-    document.getElementById("next-month").onclick = () => {
-      if (currentMonthIndex < monthKeys.length - 1) {
-        currentMonthIndex++;
-        renderMonth(monthKeys[currentMonthIndex]);
-      }
-    };
-
-    /* SWIPE */
-    let touchStartX = 0;
-    let touchEndX = 0;
-    const calendarView = document.getElementById("calendar-view");
-
-    function handleGesture() {
-      const threshold = 50;
-      if (touchEndX < touchStartX - threshold) {
-        if (currentWeek < weeks.length - 1) {
-          currentWeek++;
-          renderWeek(weeks[currentWeek], currentWeek);
-        }
-      }
-      if (touchEndX > touchStartX + threshold) {
-        if (currentWeek > 0) {
-          currentWeek--;
-          renderWeek(weeks[currentWeek], currentWeek);
-        }
-      }
-    }
-
-    calendarView.addEventListener("touchstart", (e) => {
-      touchStartX = e.changedTouches[0].screenX;
-    });
-    calendarView.addEventListener("touchend", (e) => {
-      touchEndX = e.changedTouches[0].screenX;
-      handleGesture();
     });
 
-    let mouseDown = false;
-    calendarView.addEventListener("mousedown", (e) => {
-      mouseDown = true;
-      touchStartX = e.screenX;
-    });
-    calendarView.addEventListener("mouseup", (e) => {
-      if (!mouseDown) return;
-      mouseDown = false;
-      touchEndX = e.screenX;
-      handleGesture();
-    });
+    grid.appendChild(box);
+  }
+}
+</script>
 
-    /* BUTTONS */
-    const viewProtocol = document.getElementById("view-protocol");
-    const addProtocol = document.getElementById("add-protocol");
-
-    const cycleDialog = document.getElementById("cycle-dialog");
-    const closeCycle =
+</body>
+</html>
