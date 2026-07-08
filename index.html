@@ -53,40 +53,10 @@
     background: #38bdf8;
     color: #0f172a;
   }
-
-  .corner-buttons {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .corner-btn {
-    background:#1e293b;
-    border:1px solid #334155;
-    padding:8px 12px;
-    border-radius:8px;
-    font-size:14px;
-    cursor:pointer;
-    text-align:center;
-  }
-
-  .corner-btn:hover {
-    background:#38bdf8;
-    color:#0f172a;
-  }
 </style>
 </head>
 
 <body>
-
-<div class="corner-buttons">
-  <div id="remove-protocol" class="corner-btn">Remove</div>
-  <div id="export-protocol" class="corner-btn">Export</div>
-  <div id="edit-protocol" class="corner-btn">Edit</div>
-</div>
 
 <div class="container">
   <h1>Protocol Tracker</h1>
@@ -96,43 +66,9 @@
   </div>
 
   <div class="main-btn" onclick="location.href='track.html?view=addprotocol'">
-    Add Protocol
+    Build Protocol
   </div>
 </div>
-
-<script>
-document.getElementById("remove-protocol").onclick = () => {
-  if (confirm("Remove saved protocol?")) {
-    localStorage.removeItem("protocol");
-    alert("Protocol removed.");
-  }
-};
-
-document.getElementById("export-protocol").onclick = () => {
-  const saved = localStorage.getItem("protocol");
-  if (!saved) return alert("No protocol saved.");
-
-  const items = JSON.parse(saved);
-  let csv = "Item,Weekly Dose,Frequency,Per mL,mL per dose\n";
-  items.forEach(i => {
-    csv += `${i.name},${i.weekly},${i.freq},${i.perml},${i.mlPerDose.toFixed(2)}\n`;
-  });
-
-  const blob = new Blob([csv], { type: "text/csv" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "protocol.csv";
-  a.click();
-  URL.revokeObjectURL(url);
-};
-
-document.getElementById("edit-protocol").onclick = () => {
-  const saved = localStorage.getItem("protocol");
-  if (!saved) return alert("No protocol saved to edit.");
-  location.href = "track.html?view=editprotocol";
-};
-</script>
 
 </body>
 </html>

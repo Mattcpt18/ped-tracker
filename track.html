@@ -47,30 +47,6 @@
     color: #0f172a;
   }
 
-  .corner-buttons {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .corner-btn {
-    background:#1e293b;
-    border:1px solid #334155;
-    padding:8px 12px;
-    border-radius:8px;
-    font-size:14px;
-    cursor:pointer;
-    text-align:center;
-  }
-
-  .corner-btn:hover {
-    background:#38bdf8;
-    color:#0f172a;
-  }
-
   .screen {
     display: none;
     padding: 20px;
@@ -126,35 +102,84 @@
     font-size: 12px;
   }
 
-  .day-box strong {
-    display: block;
-    margin-bottom: 6px;
+  .progress-bar {
+    margin-top: 20px;
+    background: #334155;
+    height: 20px;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: #38bdf8;
+    width: 0%;
+    transition: width 0.3s;
+  }
+
+  .bottom-buttons {
+    margin-top: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .bottom-btn {
+    background:#1e293b;
+    border:1px solid #334155;
+    padding:12px;
+    border-radius:10px;
+    font-size:16px;
+    cursor:pointer;
+    text-align:center;
+  }
+
+  .bottom-btn:hover {
+    background:#38bdf8;
+    color:#0f172a;
   }
 </style>
 </head>
 
 <body>
 
-<div class="corner-buttons">
-  <div id="remove-protocol" class="corner-btn">Remove</div>
-  <div id="export-protocol" class="corner-btn">Export</div>
-  <div id="edit-protocol" class="corner-btn">Edit</div>
-</div>
-
+<!-- MAIN SCREEN -->
 <div id="main-screen" class="center-screen">
   <div id="my-protocol-btn" class="main-btn">My Protocol</div>
-  <div id="add-protocol-btn" class="main-btn">Add Protocol</div>
+  <div id="add-protocol-btn" class="main-btn">Build Protocol</div>
 </div>
 
+<!-- ADD / EDIT SCREEN -->
 <div id="add-screen" class="screen">
-  <h2 id="form-title">Add Protocol</h2>
+  <h2 id="form-title">Build Protocol</h2>
+
   <div id="item-list"></div>
-  <div class="save-btn" id="save-protocol">Save Protocol</div>
+
+  <div class="item-row">
+    <input id="cycle-weeks" placeholder="Cycle duration (weeks)">
+  </div>
+
+  <div class="item-row">
+    <input id="cycle-start" type="date" placeholder="Start date">
+  </div>
+
+  <div class="save-btn" id="save-protocol">Build Protocol</div>
 </div>
 
+<!-- CALENDAR SCREEN -->
 <div id="calendar-screen" class="calendar">
   <h2>My Protocol Calendar</h2>
   <div id="calendar-grid" class="calendar-grid"></div>
+
+  <div class="progress-bar">
+    <div id="progress-fill" class="progress-fill"></div>
+  </div>
+
+  <div class="bottom-buttons">
+    <div id="edit-protocol" class="bottom-btn">Edit Protocol</div>
+    <div id="remove-protocol" class="bottom-btn">Remove Protocol</div>
+    <div id="export-protocol" class="bottom-btn">Export Protocol</div>
+  </div>
 </div>
 
 <script>
@@ -202,6 +227,7 @@ document.getElementById("remove-protocol").onclick = () => {
   if (confirm("Remove saved protocol?")) {
     localStorage.removeItem("protocol");
     alert("Protocol removed.");
+    location.href = "index.html";
   }
 };
 
@@ -209,8 +235,13 @@ document.getElementById("export-protocol").onclick = () => {
   const saved = localStorage.getItem("protocol");
   if (!saved) return alert("No protocol saved.");
 
-  const items = JSON.parse(saved);
-  let csv = "Item,Weekly Dose,Frequency,Per mL,mL per dose\n";
+  const data = JSON.parse(saved);
+  const items = data.items;
+
+  let csv = "Start Date," + data.cycleStart + "\n";
+  csv += "Cycle Duration (weeks)," + data.cycleWeeks + "\n\n";
+  csv += "Item,Weekly Dose,Frequency,Per mL,mL per dose\n";
+
   items.forEach(i => {
     csv += `${i.name},${i.weekly},${i.freq},${i.perml},${i.mlPerDose.toFixed(2)}\n`;
   });
@@ -229,12 +260,17 @@ function openAddScreen(isEdit) {
   calendarScreen.style.display = "none";
   addScreen.style.display = "block";
 
-  formTitle.textContent = isEdit ? "Edit Protocol" : "Add Protocol";
+  formTitle.textContent = isEdit ? "Edit Protocol" : "Build Protocol";
   itemList.innerHTML = "";
 
   if (isEdit) {
-    const saved = JSON.parse(localStorage.getItem("protocol") || "[]");
-    saved.forEach(item => {
+    const savedData = JSON.parse(localStorage.getItem("protocol"));
+    const savedItems = savedData.items;
+
+    document.getElementById("cycle-weeks").value = savedData.cycleWeeks;
+    document.getElementById("cycle-start").value = savedData.cycleStart;
+
+    savedItems.forEach(item => {
       const row = document.createElement("div");
       row.className = "item-row";
       row.innerHTML = `
@@ -245,6 +281,7 @@ function openAddScreen(isEdit) {
       `;
       itemList.appendChild(row);
     });
+
   } else {
     for (let i = 0; i < 10; i++) {
       const row = document.createElement("div");
@@ -284,30 +321,65 @@ document.getElementById("save-protocol").onclick = () => {
 
   if (items.length === 0) return alert("Add at least one item.");
 
-  localStorage.setItem("protocol", JSON.stringify(items));
-  alert("Protocol saved.");
+  const cycleWeeks = Number(document.getElementById("cycle-weeks").value.trim());
+  const cycleStart = document.getElementById("cycle-start").value;
+
+  if (!cycleWeeks || cycleWeeks <= 0) return alert("Enter cycle duration in weeks.");
+  if (!cycleStart) return alert("Select a start date.");
+
+  const protocolData = { cycleWeeks, cycleStart, items };
+  localStorage.setItem("protocol", JSON.stringify(protocolData));
+
+  alert("Protocol built.");
   addScreen.style.display = "none";
   mainScreen.style.display = "flex";
 };
 
-function loadCalendar(items) {
+function loadCalendar(data) {
+  const items = data.items;
+  const totalDays = data.cycleWeeks * 7;
+
+  const startDate = new Date(data.cycleStart);
+  const today = new Date();
+
   const grid = document.getElementById("calendar-grid");
   grid.innerHTML = "";
-  const days = 30;
 
   items.forEach(item => {
     item.interval = Math.ceil(7 / item.freq);
   });
 
-  for (let d = 1; d <= days; d++) {
+  let currentDayNumber = 0;
+
+  for (let d = 1; d <= totalDays; d++) {
     const box = document.createElement("div");
     box.className = "day-box";
-    box.innerHTML = `<strong>Day ${d}</strong>`;
+
+    const currentDate = new Date(startDate);
+    currentDate.setDate(startDate.getDate() + (d - 1));
+
+    const dateString = currentDate.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric"
+    });
+
+    const isToday = currentDate.toDateString() === today.toDateString();
+
+    if (isToday) currentDayNumber = d;
+
+    box.style.background = isToday ? "#38bdf8" : "#1e293b";
+    box.style.color = isToday ? "#0f172a" : "#e5e7eb";
+
+    box.innerHTML = `
+      <strong>Day ${d}</strong>
+      <div>${dateString}</div>
+    `;
 
     items.forEach(item => {
       if ((d - 1) % item.interval === 0) {
         box.innerHTML += `
-          <div style="border-left:4px solid ${item.color}; padding-left:6px; margin-bottom:6px;">
+          <div style="border-left:4px solid ${item.color}; padding-left:6px; margin-top:6px;">
             <span style="color:${item.color}; font-weight:600;">${item.name}</span><br>
             ${item.mlPerDose.toFixed(2)} mL per dose
           </div>
@@ -317,6 +389,10 @@ function loadCalendar(items) {
 
     grid.appendChild(box);
   }
+
+  const progressFill = document.getElementById("progress-fill");
+  const progressPercent = (currentDayNumber / totalDays) * 100;
+  progressFill.style.width = progressPercent + "%";
 }
 </script>
 
