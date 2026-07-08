@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>PED Tracker</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f172a">
+<script>
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("service-worker.js");
+  }
+</script>
+
+<style>
+  body {
+    margin: 0;
+    background: #0f172a;
+    font-family: system-ui, sans-serif;
+    color: #e5e7eb;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
+  .container {
+    width: 100%;
+    max-width: 420px;
+    padding: 20px;
+    text-align: center;
+  }
+  h1 {
+    font-size: 26px;
+    margin-bottom: 20px;
+  }
+  .btn {
+    display: block;
+    padding: 18px;
+    margin: 14px 0;
+    border-radius: 16px;
+    background: #1e293b;
+    border: 1px solid #334155;
+    font-size: 18px;
+    text-decoration: none;
+    color: #e5e7eb;
+    transition: 0.2s;
+  }
+  .btn:hover {
+    background: #38bdf8;
+    color: #0f172a;
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <h1>Select Dose Type</h1>
+
+    <a class="btn" href="track.html?type=injection">
+      Injection Schedule
+    </a>
+
+    <a class="btn" href="track.html?type=oral">
+      Oral Supplement Schedule
+    </a>
+  </div>
+</body>
+</html>
