@@ -1,70 +1,29 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Protocol Tracker</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <title>Protocol Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
 
-<style>
-  body {
-    margin: 0;
-    background: #020617;
-    color: #e5e7eb;
-    font-family: system-ui, sans-serif;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-  }
-
-  .container {
-    text-align: center;
-    width: 100%;
-    max-width: 420px;
-    padding: 20px;
-  }
-
-  h1 {
-    font-size: 28px;
-    margin-bottom: 40px;
-  }
-
-  .main-btn {
-    background: #1e293b;
-    border: 1px solid #334155;
-    padding: 18px;
-    border-radius: 14px;
-    font-size: 20px;
-    color: #e5e7eb;
-    cursor: pointer;
-    margin: 16px 0;
-    transition: 0.2s;
-  }
-
-  .main-btn:hover {
-    background: #38bdf8;
-    color: #0f172a;
-  }
-</style>
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0F172A">
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("service-worker.js");
+    }
+  </script>
 </head>
 
 <body>
-
-<div class="container">
-  <h1>Protocol Tracker</h1>
-
-  <div class="main-btn" onclick="location.href='track.html?view=myprotocol'">
-    My Protocol
+  <div class="main-logo slide-in">
+    <img src="protocol-icon.png" alt="Protocol Logo">
   </div>
 
-  <div class="main-btn" onclick="location.href='track.html?view=addprotocol'">
-    Build Protocol
+  <div class="main-buttons">
+    <button onclick="location.href='track.html?view=myprotocol'">My Protocol</button>
+    <button onclick="location.href='track.html?view=addprotocol'">Add Protocol</button>
   </div>
-
-  <div class="main-btn" onclick="location.href='reminder.html'">
-    Today's Reminder
-  </div>
-</div>
-
 </body>
 </html>
