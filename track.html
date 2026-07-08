@@ -297,3 +297,259 @@
       <div id="compound-list"></div>
 
       <button id="add-compound" class="add-compound-btn">＋ Add Compound</button>
+
+      <button id="save-cycle" class="save-cycle-btn">Save Protocol</button>
+    </div>
+  </div>
+
+  <script>
+    /* TYPE */
+    const params = new URLSearchParams(window.location.search);
+    const type = params.get("type") || "dose";
+
+    const header = document.getElementById("header-title");
+    const doseList = document.getElementById("dose-list");
+
+    if (type === "injection") {
+      header.textContent = "Injection Protocol";
+    } else {
+      header.textContent = "Oral Supplement Schedule";
+      document.getElementById("view-protocol").classList.add("hidden");
+      document.getElementById("add-protocol").classList.add("hidden");
+    }
+
+    /* ORAL LIST */
+    const sample = {
+      injection: [],
+      oral: [
+        { name: "Anastrozole", amount: "0.5 mg", time: "09:00", notes: "With food" }
+      ]
+    };
+
+    function renderManualList() {
+      doseList.innerHTML = "";
+      const arr = type === "injection" ? sample.injection : sample.oral;
+      arr.forEach(d => {
+        const card = document.createElement("div");
+        card.className = "dose-card";
+        card.innerHTML = `
+          <strong>${d.name}</strong><br>
+          ${d.amount}<br>
+          ${d.time}<br>
+          <small>${d.notes || ""}</small>
+        `;
+        doseList.appendChild(card);
+      });
+    }
+
+    renderManualList();
+
+    document.getElementById("add-dose").onclick = () => {
+      const name = prompt("Compound name:");
+      const amount = prompt("Amount:");
+      const time = prompt("Time (HH:MM):");
+      const notes = prompt("Notes:");
+      if (name && amount && time) {
+        sample[type].push({ name, amount, time, notes });
+        renderManualList();
+      }
+    };
+
+    /* STORAGE */
+    const compoundColors = [
+      "#38bdf8","#34d399","#fbbf24","#f87171","#a78bfa",
+      "#fb7185","#4ade80","#facc15","#2dd4bf","#60a5fa"
+    ];
+
+    function saveCycleToStorage(length, compounds, schedule) {
+      const data = { length, compounds, schedule };
+      localStorage.setItem("injectionCycle", JSON.stringify(data));
+    }
+
+    function loadCycleFromStorage() {
+      const raw = localStorage.getItem("injectionCycle");
+      if (!raw) return null;
+      return JSON.parse(raw);
+    }
+
+    /* SCHEDULE GEN */
+    function generateWeeklySchedule(length, compounds) {
+      const schedule = [];
+      const days = Number(length);
+      for (let day = 1; day <= days; day++) {
+        const dailyEntries = compounds.map(c => {
+          const dailyMg = (Number(c.mg) / 7).toFixed(2);
+          return {
+            name: c.name,
+            mg: dailyMg,
+            color: c.color,
+            day
+          };
+        });
+        schedule.push({ day, items: dailyEntries });
+      }
+      return schedule;
+    }
+
+    /* WEEKLY */
+    let currentWeek = 0;
+    let weeks = [];
+
+    function chunkIntoWeeks(schedule) {
+      const w = [];
+      for (let i = 0; i < schedule.length; i += 7) {
+        w.push(schedule.slice(i, i + 7));
+      }
+      return w;
+    }
+
+    function renderWeek(weekData, weekIndex) {
+      const calendar = document.getElementById("calendar-view");
+      const label = document.getElementById("week-label");
+      calendar.innerHTML = "";
+      label.textContent = `Week ${weekIndex + 1}`;
+      weekData.forEach(day => {
+        const div = document.createElement("div");
+        div.className = "calendar-day";
+        let html = `<strong>Day ${day.day}</strong>`;
+        day.items.forEach(item => {
+          html += `
+            <div class="calendar-dose" style="border-left:4px solid ${item.color};padding-left:6px;">
+              <span style="color:${item.color};font-weight:600;">${item.name}</span><br>
+              ${item.mg} mg
+            </div>
+          `;
+        });
+        div.innerHTML = html;
+        calendar.appendChild(div);
+      });
+    }
+
+    document.getElementById("prev-week").onclick = () => {
+      if (currentWeek > 0) {
+        currentWeek--;
+        renderWeek(weeks[currentWeek], currentWeek);
+      }
+    };
+    document.getElementById("next-week").onclick = () => {
+      if (currentWeek < weeks.length - 1) {
+        currentWeek++;
+        renderWeek(weeks[currentWeek], currentWeek);
+      }
+    };
+
+    /* MONTHLY */
+    let months = {};
+    let monthKeys = [];
+    let currentMonthIndex = 0;
+
+    function buildMonthlyCalendar(schedule) {
+      const m = {};
+      const startDate = new Date();
+      startDate.setHours(0,0,0,0);
+      schedule.forEach((day, index) => {
+        const date = new Date(startDate);
+        date.setDate(startDate.getDate() + index);
+        const key = `${date.getFullYear()}-${date.getMonth()}`;
+        if (!m[key]) m[key] = [];
+        m[key].push({
+          date,
+          items: day.items,
+          dayNumber: day.day
+        });
+      });
+      return m;
+    }
+
+    function renderMonth(monthKey) {
+      const monthView = document.getElementById("month-view");
+      const monthLabel = document.getElementById("month-label");
+      const days = months[monthKey];
+      if (!days) return;
+      monthView.innerHTML = "";
+      const firstDay = days[0].date;
+      const monthName = firstDay.toLocaleString("default", { month: "long" });
+      monthLabel.textContent = `${monthName} ${firstDay.getFullYear()}`;
+      const offset = firstDay.getDay();
+      for (let i = 0; i < offset; i++) {
+        const blank = document.createElement("div");
+        blank.className = "month-day";
+        monthView.appendChild(blank);
+      }
+      days.forEach(day => {
+        const div = document.createElement("div");
+        div.className = "month-day";
+        let html = `<strong>${day.date.getDate()}</strong>`;
+        day.items.forEach(item => {
+          html += `
+            <div class="month-dose" style="border-left:4px solid ${item.color};padding-left:4px;">
+              <span style="color:${item.color};font-weight:600;">${item.name}</span><br>
+              ${item.mg} mg
+            </div>
+          `;
+        });
+        div.innerHTML = html;
+        monthView.appendChild(div);
+      });
+    }
+
+    document.getElementById("prev-month").onclick = () => {
+      if (currentMonthIndex > 0) {
+        currentMonthIndex--;
+        renderMonth(monthKeys[currentMonthIndex]);
+      }
+    };
+    document.getElementById("next-month").onclick = () => {
+      if (currentMonthIndex < monthKeys.length - 1) {
+        currentMonthIndex++;
+        renderMonth(monthKeys[currentMonthIndex]);
+      }
+    };
+
+    /* SWIPE */
+    let touchStartX = 0;
+    let touchEndX = 0;
+    const calendarView = document.getElementById("calendar-view");
+
+    function handleGesture() {
+      const threshold = 50;
+      if (touchEndX < touchStartX - threshold) {
+        if (currentWeek < weeks.length - 1) {
+          currentWeek++;
+          renderWeek(weeks[currentWeek], currentWeek);
+        }
+      }
+      if (touchEndX > touchStartX + threshold) {
+        if (currentWeek > 0) {
+          currentWeek--;
+          renderWeek(weeks[currentWeek], currentWeek);
+        }
+      }
+    }
+
+    calendarView.addEventListener("touchstart", (e) => {
+      touchStartX = e.changedTouches[0].screenX;
+    });
+    calendarView.addEventListener("touchend", (e) => {
+      touchEndX = e.changedTouches[0].screenX;
+      handleGesture();
+    });
+
+    let mouseDown = false;
+    calendarView.addEventListener("mousedown", (e) => {
+      mouseDown = true;
+      touchStartX = e.screenX;
+    });
+    calendarView.addEventListener("mouseup", (e) => {
+      if (!mouseDown) return;
+      mouseDown = false;
+      touchEndX = e.screenX;
+      handleGesture();
+    });
+
+    /* BUTTONS */
+    const viewProtocol = document.getElementById("view-protocol");
+    const addProtocol = document.getElementById("add-protocol");
+
+    const cycleDialog = document.getElementById("cycle-dialog");
+    const closeCycle =
