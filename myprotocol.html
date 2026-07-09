@@ -9,7 +9,9 @@
   <link rel="manifest" href="manifest.json">
   <script src="notification-handler.js" defer></script>
 </head>
+
 <body>
+  <!-- Top Right Logo -->
   <div class="top-right-logo">
     <img id="protocolLogo" src="protocol-logo.png" alt="Protocol Logo">
   </div>
@@ -17,10 +19,12 @@
   <div class="track-container">
     <h1 class="track-title">My Protocol</h1>
 
+    <!-- Protocol Display Box -->
     <div id="protocolDisplay" class="protocol-box">
       <div class="protocol-title">Current Protocol</div>
       <div id="protocolContent">Loading...</div>
 
+      <!-- Notification Toggle -->
       <div class="protocol-item" style="margin-top:18px;">
         <label style="display:flex;align-items:center;gap:10px;">
           <input id="toggleNotify" type="checkbox">
@@ -29,13 +33,16 @@
       </div>
     </div>
 
+    <!-- Buttons -->
     <div class="protocol-actions">
       <button onclick="location.href='buildcycle.html'">Edit Protocol</button>
+      <button class="secondary" onclick="clearProtocol()">Clear Protocol</button>
       <button class="secondary" onclick="location.href='index.html'">Back to Home</button>
     </div>
   </div>
 
   <script>
+    /* Logo Tikn Animation */
     const logo = document.getElementById("protocolLogo");
     logo.addEventListener("click", () => {
       logo.classList.remove("tikn");
@@ -44,6 +51,7 @@
       setTimeout(() => location.href = "index.html", 300);
     });
 
+    /* Load Protocol */
     function loadProtocol() {
       const saved = localStorage.getItem("saved_protocol");
       const box = document.getElementById("protocolContent");
@@ -78,6 +86,7 @@
       notifyToggle.checked = protocol.notifyInjections === true;
     }
 
+    /* Save Notification Toggle */
     document.addEventListener("DOMContentLoaded", () => {
       loadProtocol();
 
@@ -97,6 +106,28 @@
         alert("Notification preference updated.");
       });
     });
+
+    /* Clear Protocol */
+    function clearProtocol() {
+      if (!confirm("Are you sure you want to clear your protocol?")) return;
+
+      // Remove from localStorage
+      localStorage.removeItem("saved_protocol");
+
+      // Remove from service worker storage
+      navigator.serviceWorker.ready.then(reg => {
+        reg.storage.set("saved_protocol", null);
+      });
+
+      // Update UI
+      document.getElementById("protocolContent").innerHTML =
+        "Protocol cleared. No protocol is currently saved.";
+
+      document.getElementById("toggleNotify").checked = false;
+
+      alert("Protocol cleared.");
+    }
   </script>
+
 </body>
 </html>
