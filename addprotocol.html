@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Add Single Compound</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="top-right-logo">
+    <img id="protocolLogo" src="protocol-logo.png" alt="Protocol Logo">
+  </div>
+
+  <div class="track-container">
+    <h1 class="track-title">Add Single Compound Protocol</h1>
+
+    <div class="protocol-card">
+      <h2>Compound</h2>
+      <label>Choose Compound:</label>
+      <select class="compoundDropdown"></select>
+      <label>Weekly Dose (mg):</label>
+      <input id="weeklyDose" type="number" placeholder="Enter mg per week">
+      <label>Frequency (times per week):</label>
+      <input id="frequency" type="number" placeholder="How many injections per week">
+      <label>Concentration (mg/ml):</label>
+      <input id="dosePerMl" type="number" placeholder="Enter mg per ml">
+    </div>
+
+    <div class="protocol-card">
+      <h2>Cycle Details</h2>
+      <label>Total Cycle Length (weeks):</label>
+      <input id="cycleDuration" type="number" placeholder="Example: 12">
+      <label>Cycle Start Date:</label>
+      <input id="startDate" type="date">
+    </div>
+
+    <div class="protocol-actions">
+      <button onclick="saveSingleProtocol()">Save Protocol</button>
+      <button class="secondary" onclick="location.href='index.html'">Back to Home</button>
+    </div>
+  </div>
+
+  <script src="compound-management.js"></script>
+  <script>
+    const logo = document.getElementById("protocolLogo");
+    logo.addEventListener("click", () => {
+      logo.classList.remove("tikn");
+      void logo.offsetWidth;
+      logo.classList.add("tikn");
+      setTimeout(() => location.href = "index.html", 300);
+    });
+
+    function saveSingleProtocol() {
+      const compound = document.querySelector(".compoundDropdown").value;
+      const weeklyDose = Number(document.getElementById("weeklyDose").value);
+      const frequency = Number(document.getElementById("frequency").value);
+      const dosePerMl = Number(document.getElementById("dosePerMl").value);
+      const cycleDuration = Number(document.getElementById("cycleDuration").value);
+      const startDate = document.getElementById("startDate").value;
+
+      if (!compound || !weeklyDose || !frequency || !dosePerMl || !cycleDuration || !startDate) {
+        alert("Please fill out all fields.");
+        return;
+      }
+
+      const protocol = {
+        cycleDuration,
+        startDate,
+        compounds: [
+          { name: compound, weeklyDose, frequency, dosePerMl }
+        ]
+      };
+
+      localStorage.setItem("saved_protocol", JSON.stringify(protocol));
+      alert("Single compound protocol saved.");
+      location.href = "myprotocol.html";
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Build Cycle</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="top-right-logo">
+    <img id="protocolLogo" src="protocol-logo.png" alt="Protocol Logo">
+  </div>
+
+  <div class="track-container">
+    <h1 class="track-title">Build Cycle</h1>
+
+    <div id="compoundRows"></div>
+
+    <div class="protocol-card">
+      <h2>Cycle Details</h2>
+      <label>Total Cycle Length (weeks):</label>
+      <input id="cycleDuration" type="number" placeholder="Example: 12">
+      <label>Cycle Start Date:</label>
+      <input id="startDate" type="date">
+    </div>
+
+    <div class="protocol-actions">
+      <button onclick="buildCycle()">Generate Cycle Calendar</button>
+      <button class="secondary" onclick="location.href='index.html'">Return to Home</button>
+    </div>
+
+    <div id="calendarOutput"></div>
+  </div>
+
+  <script src="compound-management.js"></script>
+  <script>
+    const compoundColors = [
+      "#38bdf8", "#34d399", "#fbbf24", "#f87171", "#a78bfa",
+      "#fb7185", "#4ade80", "#facc15", "#2dd4bf", "#60a5fa"
+    ];
+
+    const rowsContainer = document.getElementById("compoundRows");
+
+    for (let i = 1; i <= 10; i++) {
+      const row = document.createElement("div");
+      row.className = "row-card";
+      row.innerHTML = `
+        <h3>Compound Slot ${i}</h3>
+        <label>Choose Compound:</label>
+        <select class="compoundDropdown"></select>
+        <label>Weekly Dose (mg):</label>
+        <input class="weeklyDose" type="number" placeholder="Enter mg per week">
+        <label>Frequency (times per week):</label>
+        <input class="frequency" type="number" placeholder="How many injections per week">
+        <label>Concentration (mg/ml):</label>
+        <input class="dosePerMl" type="number" placeholder="Enter mg per ml">
+      `;
+      rowsContainer.appendChild(row);
+    }
+
+    const logo = document.getElementById("protocolLogo");
+    logo.addEventListener("click", () => {
+      logo.classList.remove("tikn");
+      void logo.offsetWidth;
+      logo.classList.add("tikn");
+      setTimeout(() => location.href = "index.html", 300);
+    });
+
+    function buildCycle() {
+      const cycleDuration = Number(document.getElementById("cycleDuration").value);
+      const startDate = document.getElementById("startDate").value;
+
+      if (!cycleDuration || !startDate) {
+        alert("Please fill out cycle duration and start date.");
+        return;
+      }
+
+      const start = new Date(startDate);
+      const totalDays = cycleDuration * 7;
+
+      const rows = document.querySelectorAll(".row-card");
+      const doseMap = {};
+      const compounds = [];
+      let compoundIndex = 0;
+
+      rows.forEach(row => {
+        const compound = row.querySelector(".compoundDropdown").value;
+        const weeklyDose = Number(row.querySelector(".weeklyDose").value);
+        const frequency = Number(row.querySelector(".frequency").value);
+        const dosePerMl = Number(row.querySelector(".dosePerMl").value);
+
+        if (!compound || !weeklyDose || !frequency || !dosePerMl) return;
+
+        const doseMg = weeklyDose / frequency;
+        const doseMl = (doseMg / dosePerMl).toFixed(2);
+        const interval = Math.floor(7 / frequency);
+        const color = compoundColors[compoundIndex] || "#38bdf8";
+        compoundIndex++;
+
+        compounds.push({ name: compound, weeklyDose, frequency, dosePerMl });
+
+        for (let i = 0; i < totalDays; i += interval) {
+          if (!doseMap[i]) doseMap[i] = [];
+          doseMap[i].push({ compound, doseMg, doseMl, color });
+        }
+      });
+
+      if (compounds.length === 0) {
+        alert("Please fill out at least one compound slot.");
+        return;
+      }
+
+      const protocol = { cycleDuration, startDate, compounds };
+      localStorage.setItem("saved_protocol", JSON.stringify(protocol));
+
+      const calendarDiv = document.getElementById("calendarOutput");
+      calendarDiv.innerHTML = "<h2>Your Cycle Calendar</h2>";
+
+      const calendarGrid = document.createElement("div");
+      calendarGrid.className = "calendar";
+
+      for (let i = 0; i < totalDays; i++) {
+        const dayDate = new Date(start);
+        dayDate.setDate(start.getDate() + i);
+
+        const dayDiv = document.createElement("div");
+        dayDiv.className = "day";
+
+        if (doseMap[i]) {
+          dayDiv.classList.add("dose-day");
+          let html = `${dayDate.toDateString()}<br><br>`;
+          doseMap[i].forEach(d => {
+            html += `
+              <div style="
+                background: ${d.color};
+                color: #0f172a;
+                padding: 6px;
+                border-radius: 6px;
+                margin-bottom: 6px;
+                font-weight: 600;
+              ">
+                ${d.compound}<br>
+                ${d.doseMg} mg (${d.doseMl} ml)
+              </div>
+            `;
+          });
+          dayDiv.innerHTML = html;
+        } else {
+          dayDiv.innerHTML = dayDate.toDateString();
+        }
+
+        const today = new Date();
+        if (
+          dayDate.getFullYear() === today.getFullYear() &&
+          dayDate.getMonth() === today.getMonth() &&
+          dayDate.getDate() === today.getDate()
+        ) {
+          dayDiv.classList.add("today");
+        }
+
+        calendarGrid.appendChild(dayDiv);
+      }
+
+      calendarDiv.appendChild(calendarGrid);
+      alert("Protocol saved. Calendar generated.");
+    }
+  </script>
+</body>
+</html>

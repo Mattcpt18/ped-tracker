@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>My Protocol</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .protocol-box {
+      background: #1e293b;
+      border: 1px solid #334155;
+      padding: 20px;
+      border-radius: 14px;
+      margin-bottom: 20px;
+      color: #e5e7eb;
+    }
+    .protocol-title {
+      font-size: 22px;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+    .protocol-item {
+      margin-bottom: 10px;
+      line-height: 1.5;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="top-right-logo">
+    <img id="protocolLogo" src="protocol-logo.png" alt="Protocol Logo">
+  </div>
+
+  <div class="track-container">
+    <h1 class="track-title">My Protocol</h1>
+
+    <div id="protocolDisplay" class="protocol-box">
+      <div class="protocol-title">Current Protocol</div>
+      <div id="protocolContent">Loading...</div>
+    </div>
+
+    <div class="protocol-actions">
+      <button onclick="location.href='buildcycle.html'">Edit Protocol</button>
+      <button class="secondary" onclick="location.href='index.html'">Back to Home</button>
+    </div>
+  </div>
+
+  <script>
+    const logo = document.getElementById("protocolLogo");
+    logo.addEventListener("click", () => {
+      logo.classList.remove("tikn");
+      void logo.offsetWidth;
+      logo.classList.add("tikn");
+      setTimeout(() => location.href = "index.html", 300);
+    });
+
+    function loadProtocol() {
+      const saved = localStorage.getItem("saved_protocol");
+      const box = document.getElementById("protocolContent");
+
+      if (!saved) {
+        box.innerHTML = "No protocol has been created yet.";
+        return;
+      }
+
+      const protocol = JSON.parse(saved);
+
+      let html = `
+        <div class="protocol-item"><strong>Cycle Length:</strong> ${protocol.cycleDuration} weeks</div>
+        <div class="protocol-item"><strong>Start Date:</strong> ${protocol.startDate}</div>
+        <hr style="border-color:#334155;margin:12px 0;">
+      `;
+
+      protocol.compounds.forEach((c, i) => {
+        html += `
+          <div class="protocol-item">
+            <strong>Compound ${i + 1}:</strong> ${c.name}<br>
+            Weekly Dose: ${c.weeklyDose} mg<br>
+            Frequency: ${c.frequency}× per week<br>
+            Concentration: ${c.dosePerMl} mg/ml
+          </div>
+        `;
+      });
+
+      box.innerHTML = html;
+    }
+
+    document.addEventListener("DOMContentLoaded", loadProtocol);
+  </script>
+</body>
+</html>

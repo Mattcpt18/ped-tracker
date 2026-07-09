@@ -2,206 +2,86 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Build Cycle</title>
+  <title>Track Protocol Calendar</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="style.css">
-
-  <!-- PWA -->
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#0F172A">
-  <script>
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("service-worker.js");
-    }
-  </script>
-
-  <style>
-    /* Tikn animation */
-    @keyframes tikn {
-      0% { transform: scale(1) rotate(0deg); }
-      30% { transform: scale(1.15) rotate(8deg); }
-      60% { transform: scale(0.9) rotate(-6deg); }
-      100% { transform: scale(1) rotate(0deg); }
-    }
-    .tikn { animation: tikn 0.4s ease-out; }
-
-    /* Small upper-right logo */
-    .top-right-logo {
-      position: absolute;
-      top: 16px;
-      right: 16px;
-    }
-    .top-right-logo img {
-      width: 48px;
-      height: auto;
-      border-radius: 10px;
-      cursor: pointer;
-    }
-
-    /* Calendar grid */
-    .calendar {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 8px;
-      margin-top: 20px;
-    }
-    .day {
-      background: #1e293b;
-      border: 1px solid #334155;
-      padding: 10px;
-      border-radius: 10px;
-      color: #e5e7eb;
-      text-align: center;
-      min-height: 60px;
-      font-size: 14px;
-    }
-    .dose-day {
-      background: #38bdf8;
-      color: #0f172a;
-      font-weight: 600;
-    }
-    .today {
-      border: 2px solid #facc15;
-    }
-
-    .row-card {
-      background: #1e293b;
-      border: 1px solid #334155;
-      padding: 16px;
-      border-radius: 14px;
-      margin-bottom: 20px;
-    }
-  </style>
 </head>
-
 <body>
-
-  <!-- Upper-right logo -->
   <div class="top-right-logo">
     <img id="protocolLogo" src="protocol-logo.png" alt="Protocol Logo">
   </div>
 
   <div class="track-container">
-    <h1 class="track-title">Build Cycle</h1>
-
-    <!-- 10 Compound Rows -->
-    <div id="compoundRows"></div>
-
-    <!-- Cycle Info -->
-    <div class="protocol-card">
-      <h2>Cycle Info</h2>
-
-      <label>Cycle Duration (weeks):</label>
-      <input id="cycleDuration" type="number" placeholder="Weeks">
-
-      <label>Start Date:</label>
-      <input id="startDate" type="date">
-    </div>
-
-    <div class="protocol-actions">
-      <button onclick="buildCycle()">Build Cycle</button>
-      <button onclick="location.href='index.html'">Back to Home</button>
-    </div>
+    <h1 class="track-title">Protocol Calendar</h1>
 
     <div id="calendarOutput"></div>
+
+    <div class="protocol-actions">
+      <button onclick="location.href='myprotocol.html'">View Protocol Details</button>
+      <button class="secondary" onclick="location.href='index.html'">Back to Home</button>
+    </div>
   </div>
 
-  <!-- Locked compound list -->
-  <script src="compound-management.js"></script>
-
   <script>
-    /* ------------------------------------------------------------
-       Generate 10 rows dynamically
-       ------------------------------------------------------------ */
-    const rowsContainer = document.getElementById("compoundRows");
-
-    for (let i = 1; i <= 10; i++) {
-      const row = document.createElement("div");
-      row.className = "row-card";
-
-      row.innerHTML = `
-        <h3>Compound ${i}</h3>
-
-        <label>Compound:</label>
-        <select class="compoundDropdown"></select>
-
-        <label>Weekly Dose (mg):</label>
-        <input class="weeklyDose" type="number" placeholder="mg">
-
-        <label>Frequency (times per week):</label>
-        <input class="frequency" type="number" placeholder="Times per week">
-
-        <label>Dose per ml (mg/ml):</label>
-        <input class="dosePerMl" type="number" placeholder="mg/ml">
-      `;
-
-      rowsContainer.appendChild(row);
-    }
-
-    /* ------------------------------------------------------------
-       Sync dropdowns after rows are created
-       ------------------------------------------------------------ */
-    document.addEventListener("DOMContentLoaded", () => {
-      const dropdowns = document.querySelectorAll(".compoundDropdown");
-      dropdowns.forEach(dd => updateDropdown(dd));
-    });
-
-    /* ------------------------------------------------------------
-       Logo click animation + return home
-       ------------------------------------------------------------ */
     const logo = document.getElementById("protocolLogo");
     logo.addEventListener("click", () => {
       logo.classList.remove("tikn");
       void logo.offsetWidth;
       logo.classList.add("tikn");
-      setTimeout(() => {
-        location.href = "index.html";
-      }, 300);
+      setTimeout(() => location.href = "index.html", 300);
     });
 
-    /* ------------------------------------------------------------
-       Build Cycle (Calendar for all compounds)
-       ------------------------------------------------------------ */
-    function buildCycle() {
-      const cycleDuration = Number(document.getElementById("cycleDuration").value);
-      const startDate = document.getElementById("startDate").value;
+    function renderCalendar() {
+      const saved = localStorage.getItem("saved_protocol");
+      const calendarDiv = document.getElementById("calendarOutput");
+
+      if (!saved) {
+        calendarDiv.innerHTML = "No protocol found. Please build a cycle first.";
+        return;
+      }
+
+      const protocol = JSON.parse(saved);
+      const cycleDuration = Number(protocol.cycleDuration);
+      const startDate = protocol.startDate;
 
       if (!cycleDuration || !startDate) {
-        alert("Please fill out cycle duration and start date.");
+        calendarDiv.innerHTML = "Protocol data is incomplete.";
         return;
       }
 
       const start = new Date(startDate);
       const totalDays = cycleDuration * 7;
 
-      const calendarDiv = document.getElementById("calendarOutput");
-      calendarDiv.innerHTML = "<h2>Cycle Calendar</h2>";
+      const compoundColors = [
+        "#38bdf8", "#34d399", "#fbbf24", "#f87171", "#a78bfa",
+        "#fb7185", "#4ade80", "#facc15", "#2dd4bf", "#60a5fa"
+      ];
 
-      const calendarGrid = document.createElement("div");
-      calendarGrid.className = "calendar";
+      const doseMap = {};
+      let compoundIndex = 0;
 
-      const rows = document.querySelectorAll(".row-card");
+      protocol.compounds.forEach(c => {
+        const weeklyDose = Number(c.weeklyDose);
+        const frequency = Number(c.frequency);
+        const dosePerMl = Number(c.dosePerMl);
 
-      const doseMap = {}; // day → array of doses
-
-      rows.forEach(row => {
-        const compound = row.querySelector(".compoundDropdown").value;
-        const weeklyDose = Number(row.querySelector(".weeklyDose").value);
-        const frequency = Number(row.querySelector(".frequency").value);
-        const dosePerMl = Number(row.querySelector(".dosePerMl").value);
-
-        if (!compound || !weeklyDose || !frequency || !dosePerMl) return;
+        if (!c.name || !weeklyDose || !frequency || !dosePerMl) return;
 
         const doseMg = weeklyDose / frequency;
         const doseMl = (doseMg / dosePerMl).toFixed(2);
-
         const interval = Math.floor(7 / frequency);
+        const color = compoundColors[compoundIndex] || "#38bdf8";
+        compoundIndex++;
 
         for (let i = 0; i < totalDays; i += interval) {
           if (!doseMap[i]) doseMap[i] = [];
-          doseMap[i].push({ compound, doseMg, doseMl });
+          doseMap[i].push({ compound: c.name, doseMg, doseMl, color });
         }
       });
+
+      calendarDiv.innerHTML = "<h2>Your Saved Cycle Calendar</h2>";
+      const calendarGrid = document.createElement("div");
+      calendarGrid.className = "calendar";
 
       for (let i = 0; i < totalDays; i++) {
         const dayDate = new Date(start);
@@ -212,12 +92,22 @@
 
         if (doseMap[i]) {
           dayDiv.classList.add("dose-day");
-
-          let html = `${dayDate.toDateString()}<br>`;
+          let html = `${dayDate.toDateString()}<br><br>`;
           doseMap[i].forEach(d => {
-            html += `${d.compound}: ${d.doseMg} mg (${d.doseMl} ml)<br>`;
+            html += `
+              <div style="
+                background: ${d.color};
+                color: #0f172a;
+                padding: 6px;
+                border-radius: 6px;
+                margin-bottom: 6px;
+                font-weight: 600;
+              ">
+                ${d.compound}<br>
+                ${d.doseMg} mg (${d.doseMl} ml)
+              </div>
+            `;
           });
-
           dayDiv.innerHTML = html;
         } else {
           dayDiv.innerHTML = dayDate.toDateString();
@@ -237,7 +127,8 @@
 
       calendarDiv.appendChild(calendarGrid);
     }
-  </script>
 
+    document.addEventListener("DOMContentLoaded", renderCalendar);
+  </script>
 </body>
 </html>
