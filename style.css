@@ -16,7 +16,7 @@ body {
   height: auto;
   border-radius: 28px; /* iOS-style rounded square */
   display: block;
-  margin-bottom: 40px;
+  margin-bottom: 20px;
 }
 
 /* Slide-in animation */
@@ -31,6 +31,16 @@ body {
     opacity: 1;
     transform: translateX(0);
   }
+}
+
+/* PROTOCOL title */
+.app-title {
+  color: #e5e7eb;
+  font-size: 32px;
+  letter-spacing: 6px;
+  font-weight: 600;
+  margin-bottom: 40px;
+  text-align: center;
 }
 
 /* Buttons */
@@ -56,4 +66,17 @@ button {
 button:hover {
   background: #38bdf8;
   color: #0f172a;
+}
+
+/* Upper-right logo for secondary pages */
+.top-right-logo {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+}
+
+.top-right-logo img {
+  width: 55px;
+  height: auto;
+  border-radius: 14px;
 }
