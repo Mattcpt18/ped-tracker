@@ -1,489 +1,193 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Protocol Tracker – Track</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <title>Track Protocol</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
 
-<style>
-  body {
-    margin: 0;
-    background: #020617;
-    color: #e5e7eb;
-    font-family: system-ui, sans-serif;
-  }
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0F172A">
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("service-worker.js");
+    }
+  </script>
 
-  .center-screen {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    gap: 20px;
-  }
+  <style>
+    /* Fun tikn animation */
+    @keyframes tikn {
+      0% { transform: scale(1) rotate(0deg); }
+      30% { transform: scale(1.15) rotate(8deg); }
+      60% { transform: scale(0.9) rotate(-6deg); }
+      100% { transform: scale(1) rotate(0deg); }
+    }
+    .tikn {
+      animation: tikn 0.4s ease-out;
+    }
 
-  .main-btn {
-    background: #1e293b;
-    border: 1px solid #334155;
-    padding: 18px 26px;
-    border-radius: 14px;
-    font-size: 20px;
-    color: #e5e7eb;
-    cursor: pointer;
-    width: 70%;
-    text-align: center;
-  }
+    /* Calendar grid */
+    .calendar {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+      margin-top: 20px;
+    }
 
-  .main-btn:hover {
-    background: #38bdf8;
-    color: #0f172a;
-  }
+    .day {
+      background: #1e293b;
+      border: 1px solid #334155;
+      padding: 10px;
+      border-radius: 10px;
+      color: #e5e7eb;
+      text-align: center;
+      min-height: 60px;
+      font-size: 14px;
+    }
 
-  .screen {
-    display: none;
-    padding: 20px;
-  }
+    .dose-day {
+      background: #38bdf8;
+      color: #0f172a;
+      font-weight: 600;
+    }
 
-  .item-row {
-    background: #1e293b;
-    border: 1px solid #334155;
-    padding: 12px;
-    border-radius: 12px;
-    margin-bottom: 12px;
-  }
-
-  .item-row input {
-    width: 100%;
-    padding: 10px;
-    margin-top: 6px;
-    border-radius: 10px;
-    background: #0f172a;
-    border: 1px solid #334155;
-    color: #e5e7eb;
-  }
-
-  .save-btn {
-    background: #38bdf8;
-    color: #0f172a;
-    padding: 16px;
-    border-radius: 12px;
-    font-size: 18px;
-    font-weight: 600;
-    cursor: pointer;
-    margin-top: 20px;
-    text-align: center;
-  }
-
-  .calendar {
-    display: none;
-    padding: 20px;
-  }
-
-  .calendar-grid {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 8px;
-  }
-
-  .day-box {
-    background: #1e293b;
-    border: 1px solid #334155;
-    padding: 10px;
-    border-radius: 10px;
-    min-height: 120px;
-    font-size: 12px;
-  }
-
-  .progress-bar {
-    margin-top: 20px;
-    background: #334155;
-    height: 20px;
-    border-radius: 10px;
-    overflow: hidden;
-  }
-
-  .progress-fill {
-    height: 100%;
-    background: #38bdf8;
-    width: 0%;
-    transition: width 0.3s;
-  }
-
-  .bottom-buttons {
-    margin-top: 30px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .bottom-btn {
-    background:#1e293b;
-    border:1px solid #334155;
-    padding:12px;
-    border-radius:10px;
-    font-size:16px;
-    cursor:pointer;
-    text-align:center;
-  }
-
-  .bottom-btn:hover {
-    background:#38bdf8;
-    color:#0f172a;
-  }
-
-  #notify-status {
-    margin-bottom: 20px;
-    opacity: 0.8;
-  }
-</style>
+    .today {
+      border: 2px solid #facc15;
+    }
+  </style>
 </head>
 
 <body>
 
-<!-- MAIN SCREEN -->
-<div id="main-screen" class="center-screen">
-  <div id="my-protocol-btn" class="main-btn">My Protocol</div>
-  <div id="add-protocol-btn" class="main-btn">Build Protocol</div>
-</div>
-
-<!-- ADD / EDIT SCREEN -->
-<div id="add-screen" class="screen">
-  <h2 id="form-title">Build Protocol</h2>
-
-  <div id="item-list"></div>
-
-  <div class="item-row">
-    <input id="cycle-weeks" placeholder="Cycle duration (weeks)">
+  <!-- Upper-right logo -->
+  <div class="top-right-logo">
+    <img id="protocolLogo" src="protocol-logo.png" alt="Protocol Logo">
   </div>
 
-  <div class="item-row">
-    <label style="display:block; margin-bottom:6px;">Start Date</label>
-    <input id="cycle-start" type="date">
+  <div class="track-container">
+    <h1 class="track-title">Track Protocol</h1>
+
+    <!-- Compound selection -->
+    <div class="protocol-card">
+      <h2>Compound</h2>
+
+      <label>Select Compound:</label>
+      <select id="compoundDropdown"></select>
+
+      <label>Weekly Dose (mg):</label>
+      <input id="weeklyDose" type="number" placeholder="mg">
+
+      <label>Frequency (times per week):</label>
+      <input id="frequency" type="number" placeholder="Times per week">
+
+      <label>Dose per ml (mg/ml):</label>
+      <input id="dosePerMl" type="number" placeholder="mg/ml">
+    </div>
+
+    <!-- Cycle info -->
+    <div class="protocol-card">
+      <h2>Cycle Info</h2>
+
+      <label>Cycle Duration (weeks):</label>
+      <input id="cycleDuration" type="number" placeholder="Weeks">
+
+      <label>Start Date:</label>
+      <input id="startDate" type="date">
+    </div>
+
+    <div class="protocol-actions">
+      <button onclick="buildProtocol()">Build Protocol</button>
+      <button onclick="location.href='index.html'">Back to Home</button>
+    </div>
+
+    <div id="calendarOutput"></div>
   </div>
 
-  <div class="item-row">
-    <label style="display:block; margin-bottom:6px;">Enable Notifications</label>
-    <input id="cycle-notify" type="checkbox">
-  </div>
+  <!-- Auto-sync compound list -->
+  <script src="compound-management.js"></script>
 
-  <div class="save-btn" id="save-protocol">Build Protocol</div>
-</div>
-
-<!-- CALENDAR SCREEN -->
-<div id="calendar-screen" class="calendar">
-  <h2>My Protocol Calendar</h2>
-  <div id="notify-status"></div>
-  <div id="calendar-grid" class="calendar-grid"></div>
-
-  <div class="progress-bar">
-    <div id="progress-fill" class="progress-fill"></div>
-  </div>
-
-  <div class="bottom-buttons">
-    <div id="edit-protocol" class="bottom-btn">Edit Protocol</div>
-    <div id="remove-protocol" class="bottom-btn">Remove Protocol</div>
-    <div id="export-protocol" class="bottom-btn">Export Protocol</div>
-  </div>
-</div>
-
-<script>
-const params = new URLSearchParams(window.location.search);
-const view = params.get("view");
-
-const mainScreen = document.getElementById("main-screen");
-const addScreen = document.getElementById("add-screen");
-const calendarScreen = document.getElementById("calendar-screen");
-const formTitle = document.getElementById("form-title");
-const itemList = document.getElementById("item-list");
-
-const itemColors = [
-  "#38bdf8","#34d399","#fbbf24","#f87171","#a78bfa",
-  "#fb7185","#4ade80","#f97316","#2dd4bf","#60a5fa"
-];
-
-if (view === "addprotocol") openAddScreen(false);
-else if (view === "editprotocol") openAddScreen(true);
-else if (view === "myprotocol") {
-  const saved = localStorage.getItem("protocol");
-  if (saved) {
-    const data = JSON.parse(saved);
-    loadCalendar(data);
-    mainScreen.style.display = "none";
-    calendarScreen.style.display = "block";
-  }
-}
-
-document.getElementById("add-protocol-btn").onclick = () => openAddScreen(false);
-
-document.getElementById("my-protocol-btn").onclick = () => {
-  const saved = localStorage.getItem("protocol");
-  if (!saved) {
-    alert("No protocol saved.");
-    return;
-  }
-
-  const data = JSON.parse(saved);
-
-  if (data.cycleNotify) {
-    requestNotificationPermission();
-    checkTodayForItems(data);
-  }
-
-  loadCalendar(data);
-  mainScreen.style.display = "none";
-  calendarScreen.style.display = "block";
-};
-
-document.getElementById("edit-protocol").onclick = () => {
-  const saved = localStorage.getItem("protocol");
-  if (!saved) {
-    alert("No protocol saved to edit.");
-    return;
-  }
-  openAddScreen(true);
-};
-
-document.getElementById("remove-protocol").onclick = () => {
-  if (confirm("Remove saved protocol?")) {
-    localStorage.removeItem("protocol");
-    alert("Protocol removed.");
-    location.href = "index.html";
-  }
-};
-
-document.getElementById("export-protocol").onclick = () => {
-  const saved = localStorage.getItem("protocol");
-  if (!saved) {
-    alert("No protocol saved.");
-    return;
-  }
-
-  const data = JSON.parse(saved);
-  const items = data.items;
-
-  let csv = "Start Date," + data.cycleStart + "\n";
-  csv += "Cycle Duration (weeks)," + data.cycleWeeks + "\n";
-  csv += "Notifications Enabled," + (data.cycleNotify ? "Yes" : "No") + "\n\n";
-  csv += "Item,Weekly Dose,Frequency,Per mL,mL per dose\n";
-
-  items.forEach(i => {
-    csv += `${i.name},${i.weekly},${i.freq},${i.perml},${i.mlPerDose.toFixed(2)}\n`;
-  });
-
-  const blob = new Blob([csv], { type: "text/csv" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "protocol.csv";
-  a.click();
-  URL.revokeObjectURL(url);
-};
-
-function openAddScreen(isEdit) {
-  mainScreen.style.display = "none";
-  calendarScreen.style.display = "none";
-  addScreen.style.display = "block";
-
-  formTitle.textContent = isEdit ? "Edit Protocol" : "Build Protocol";
-  itemList.innerHTML = "";
-
-  if (isEdit) {
-    const savedData = JSON.parse(localStorage.getItem("protocol"));
-    const savedItems = savedData.items;
-
-    document.getElementById("cycle-weeks").value = savedData.cycleWeeks;
-    document.getElementById("cycle-start").value = savedData.cycleStart;
-    document.getElementById("cycle-notify").checked = !!savedData.cycleNotify;
-
-    savedItems.forEach(item => {
-      const row = document.createElement("div");
-      row.className = "item-row";
-      row.innerHTML = `
-        <input value="${item.name}">
-        <input value="${item.weekly}">
-        <input value="${item.freq}">
-        <input value="${item.perml}">
-      `;
-      itemList.appendChild(row);
+  <script>
+    // Logo click animation + return home
+    const logo = document.getElementById("protocolLogo");
+    logo.addEventListener("click", () => {
+      logo.classList.remove("tikn");
+      void logo.offsetWidth;
+      logo.classList.add("tikn");
+      setTimeout(() => {
+        location.href = "index.html";
+      }, 300);
     });
 
-  } else {
-    for (let i = 0; i < 10; i++) {
-      const row = document.createElement("div");
-      row.className = "item-row";
-      row.innerHTML = `
-        <input placeholder="Item name">
-        <input placeholder="Weekly dose (mg)">
-        <input placeholder="Frequency per week">
-        <input placeholder="Dose per mL (mg/mL)">
-      `;
-      itemList.appendChild(row);
-    }
-  }
-}
+    /* ------------------------------------------------------------
+       Build Protocol + Calendar
+       ------------------------------------------------------------ */
+    function buildProtocol() {
+      const compound = document.getElementById("compoundDropdown").value;
+      const weeklyDose = Number(document.getElementById("weeklyDose").value);
+      const frequency = Number(document.getElementById("frequency").value);
+      const dosePerMl = Number(document.getElementById("dosePerMl").value);
+      const cycleDuration = Number(document.getElementById("cycleDuration").value);
+      const startDate = document.getElementById("startDate").value;
 
-document.getElementById("save-protocol").onclick = () => {
-  const items = [];
-
-  document.querySelectorAll(".item-row").forEach((row, index) => {
-    const fields = row.querySelectorAll("input");
-
-    // Skip non-compound rows (cycle weeks, start date, notify)
-    if (fields.length !== 4) return;
-
-    const name = fields[0].value.trim();
-    const weekly = Number(fields[1].value.trim());
-    const freq = Number(fields[2].value.trim());
-    const perml = Number(fields[3].value.trim());
-
-    if (name && weekly && freq && perml) {
-      const mlPerDose = weekly / (freq * perml);
-      items.push({
-        name,
-        weekly,
-        freq,
-        perml,
-        mlPerDose,
-        color: itemColors[index % itemColors.length]
-      });
-    }
-  });
-
-  if (items.length === 0) {
-    alert("Add at least one compound.");
-    return;
-  }
-
-  const cycleWeeks = Number(document.getElementById("cycle-weeks").value.trim());
-  const cycleStart = document.getElementById("cycle-start").value;
-  const cycleNotify = document.getElementById("cycle-notify").checked;
-
-  if (!cycleWeeks || cycleWeeks <= 0) {
-    alert("Enter cycle duration in weeks.");
-    return;
-  }
-
-  if (!cycleStart) {
-    alert("Select a start date.");
-    return;
-  }
-
-  const protocolData = {
-    cycleWeeks,
-    cycleStart,
-    cycleNotify,
-    items
-  };
-
-  localStorage.setItem("protocol", JSON.stringify(protocolData));
-
-  alert("Protocol built.");
-  addScreen.style.display = "none";
-  mainScreen.style.display = "flex";
-};
-
-function loadCalendar(data) {
-  const items = data.items;
-  const totalDays = data.cycleWeeks * 7;
-
-  const startDate = new Date(data.cycleStart);
-  const today = new Date();
-
-  const grid = document.getElementById("calendar-grid");
-  grid.innerHTML = "";
-
-  document.getElementById("notify-status").innerText =
-    data.cycleNotify
-      ? "Notifications enabled for this cycle"
-      : "Notifications disabled";
-
-  items.forEach(item => {
-    item.interval = Math.ceil(7 / item.freq);
-  });
-
-  let currentDayNumber = 0;
-
-  for (let d = 1; d <= totalDays; d++) {
-    const box = document.createElement("div");
-    box.className = "day-box";
-
-    const currentDate = new Date(startDate);
-    currentDate.setDate(startDate.getDate() + (d - 1));
-
-    const dateString = currentDate.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric"
-    });
-
-    const isToday = currentDate.toDateString() === today.toDateString();
-    if (isToday) currentDayNumber = d;
-
-    box.style.background = isToday ? "#38bdf8" : "#1e293b";
-    box.style.color = isToday ? "#0f172a" : "#e5e7eb";
-
-    box.innerHTML = `
-      <strong>Day ${d}</strong>
-      <div>${dateString}</div>
-    `;
-
-    items.forEach(item => {
-      if ((d - 1) % item.interval === 0) {
-        box.innerHTML += `
-          <div style="border-left:4px solid ${item.color}; padding-left:6px; margin-top:6px;">
-            <span style="color:${item.color}; font-weight:600;">${item.name}</span><br>
-            ${item.mlPerDose.toFixed(2)} mL per dose
-          </div>
-        `;
+      if (!compound || !weeklyDose || !frequency || !dosePerMl || !cycleDuration || !startDate) {
+        alert("Please fill out all fields.");
+        return;
       }
-    });
 
-    grid.appendChild(box);
-  }
+      const doseMg = weeklyDose / frequency;
+      const doseMl = (doseMg / dosePerMl).toFixed(2);
 
-  const progressFill = document.getElementById("progress-fill");
-  const progressPercent = (currentDayNumber / totalDays) * 100;
-  progressFill.style.width = progressPercent + "%";
-}
+      const start = new Date(startDate);
+      const totalDays = cycleDuration * 7;
 
-/* Notifications */
+      const doseInterval = Math.floor(7 / frequency);
 
-function requestNotificationPermission() {
-  if ("Notification" in window && Notification.permission === "default") {
-    Notification.requestPermission();
-  }
-}
+      const doseDays = [];
+      for (let i = 0; i < totalDays; i += doseInterval) {
+        doseDays.push(i);
+      }
 
-function sendReminderNotification(message) {
-  if ("Notification" in window && Notification.permission === "granted") {
-    new Notification("Protocol Reminder", {
-      body: message
-    });
-  }
-}
+      const calendarDiv = document.getElementById("calendarOutput");
+      calendarDiv.innerHTML = "<h2>Protocol Calendar</h2>";
 
-function checkTodayForItems(data) {
-  const items = data.items;
-  const startDate = new Date(data.cycleStart);
-  const today = new Date();
+      const calendarGrid = document.createElement("div");
+      calendarGrid.className = "calendar";
 
-  const daysSinceStart = Math.floor(
-    (today - startDate) / (1000 * 60 * 60 * 24)
-  );
+      for (let i = 0; i < totalDays; i++) {
+        const dayDate = new Date(start);
+        dayDate.setDate(start.getDate() + i);
 
-  if (daysSinceStart < 0) return;
-  if (daysSinceStart >= data.cycleWeeks * 7) return;
+        const dayDiv = document.createElement("div");
+        dayDiv.className = "day";
 
-  items.forEach(item => {
-    const interval = Math.ceil(7 / item.freq);
-    if (daysSinceStart % interval === 0) {
-      sendReminderNotification(
-        `You scheduled ${item.name} today. Check your protocol calendar.`
-      );
+        const isDoseDay = doseDays.includes(i);
+        if (isDoseDay) {
+          dayDiv.classList.add("dose-day");
+          dayDiv.innerHTML = `
+            ${dayDate.toDateString()}<br>
+            Dose: ${doseMg} mg<br>
+            (${doseMl} ml)
+          `;
+        } else {
+          dayDiv.innerHTML = dayDate.toDateString();
+        }
+
+        const today = new Date();
+        if (
+          dayDate.getFullYear() === today.getFullYear() &&
+          dayDate.getMonth() === today.getMonth() &&
+          dayDate.getDate() === today.getDate()
+        ) {
+          dayDiv.classList.add("today");
+        }
+
+        calendarGrid.appendChild(dayDiv);
+      }
+
+      calendarDiv.appendChild(calendarGrid);
     }
-  });
-}
-</script>
+  </script>
 
 </body>
 </html>
