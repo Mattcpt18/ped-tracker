@@ -4,7 +4,10 @@
   <meta charset="UTF-8">
   <title>Add Single Compound</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+  <script src="notification-handler.js" defer></script>
 </head>
 <body>
   <div class="top-right-logo">
@@ -32,6 +35,11 @@
       <input id="cycleDuration" type="number" placeholder="Example: 12">
       <label>Cycle Start Date:</label>
       <input id="startDate" type="date">
+
+      <label style="display:flex;align-items:center;gap:10px;margin-top:14px;">
+        <input id="notifyInjections" type="checkbox">
+        Enable Injection Notifications
+      </label>
     </div>
 
     <div class="protocol-actions">
@@ -57,6 +65,7 @@
       const dosePerMl = Number(document.getElementById("dosePerMl").value);
       const cycleDuration = Number(document.getElementById("cycleDuration").value);
       const startDate = document.getElementById("startDate").value;
+      const notify = document.getElementById("notifyInjections").checked;
 
       if (!compound || !weeklyDose || !frequency || !dosePerMl || !cycleDuration || !startDate) {
         alert("Please fill out all fields.");
@@ -66,12 +75,18 @@
       const protocol = {
         cycleDuration,
         startDate,
+        notifyInjections: notify,
         compounds: [
           { name: compound, weeklyDose, frequency, dosePerMl }
         ]
       };
 
       localStorage.setItem("saved_protocol", JSON.stringify(protocol));
+
+      navigator.serviceWorker.ready.then(reg => {
+        reg.storage.set("saved_protocol", JSON.stringify(protocol));
+      });
+
       alert("Single compound protocol saved.");
       location.href = "myprotocol.html";
     }

@@ -4,7 +4,10 @@
   <meta charset="UTF-8">
   <title>Track Protocol Calendar</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+  <script src="notification-handler.js" defer></script>
 </head>
 <body>
   <div class="top-right-logo">
@@ -13,6 +16,20 @@
 
   <div class="track-container">
     <h1 class="track-title">Protocol Calendar</h1>
+
+    <div class="color-legend">
+      <h3>Color Legend</h3>
+      <div class="legend-row"><div class="legend-color" style="background:#38bdf8;"></div> Slot 1</div>
+      <div class="legend-row"><div class="legend-color" style="background:#34d399;"></div> Slot 2</div>
+      <div class="legend-row"><div class="legend-color" style="background:#fbbf24;"></div> Slot 3</div>
+      <div class="legend-row"><div class="legend-color" style="background:#f87171;"></div> Slot 4</div>
+      <div class="legend-row"><div class="legend-color" style="background:#a78bfa;"></div> Slot 5</div>
+      <div class="legend-row"><div class="legend-color" style="background:#fb7185;"></div> Slot 6</div>
+      <div class="legend-row"><div class="legend-color" style="background:#4ade80;"></div> Slot 7</div>
+      <div class="legend-row"><div class="legend-color" style="background:#facc15;"></div> Slot 8</div>
+      <div class="legend-row"><div class="legend-color" style="background:#2dd4bf;"></div> Slot 9</div>
+      <div class="legend-row"><div class="legend-color" style="background:#60a5fa;"></div> Slot 10</div>
+    </div>
 
     <div id="calendarOutput"></div>
 

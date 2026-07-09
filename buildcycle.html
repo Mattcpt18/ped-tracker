@@ -4,7 +4,10 @@
   <meta charset="UTF-8">
   <title>Build Cycle</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+  <script src="notification-handler.js" defer></script>
 </head>
 <body>
   <div class="top-right-logo">
@@ -22,11 +25,30 @@
       <input id="cycleDuration" type="number" placeholder="Example: 12">
       <label>Cycle Start Date:</label>
       <input id="startDate" type="date">
+
+      <label style="display:flex;align-items:center;gap:10px;margin-top:14px;">
+        <input id="notifyInjections" type="checkbox">
+        Enable Injection Notifications
+      </label>
     </div>
 
     <div class="protocol-actions">
       <button onclick="buildCycle()">Generate Cycle Calendar</button>
       <button class="secondary" onclick="location.href='index.html'">Return to Home</button>
+    </div>
+
+    <div class="color-legend">
+      <h3>Color Legend</h3>
+      <div class="legend-row"><div class="legend-color" style="background:#38bdf8;"></div> Slot 1</div>
+      <div class="legend-row"><div class="legend-color" style="background:#34d399;"></div> Slot 2</div>
+      <div class="legend-row"><div class="legend-color" style="background:#fbbf24;"></div> Slot 3</div>
+      <div class="legend-row"><div class="legend-color" style="background:#f87171;"></div> Slot 4</div>
+      <div class="legend-row"><div class="legend-color" style="background:#a78bfa;"></div> Slot 5</div>
+      <div class="legend-row"><div class="legend-color" style="background:#fb7185;"></div> Slot 6</div>
+      <div class="legend-row"><div class="legend-color" style="background:#4ade80;"></div> Slot 7</div>
+      <div class="legend-row"><div class="legend-color" style="background:#facc15;"></div> Slot 8</div>
+      <div class="legend-row"><div class="legend-color" style="background:#2dd4bf;"></div> Slot 9</div>
+      <div class="legend-row"><div class="legend-color" style="background:#60a5fa;"></div> Slot 10</div>
     </div>
 
     <div id="calendarOutput"></div>
@@ -69,6 +91,7 @@
     function buildCycle() {
       const cycleDuration = Number(document.getElementById("cycleDuration").value);
       const startDate = document.getElementById("startDate").value;
+      const notify = document.getElementById("notifyInjections").checked;
 
       if (!cycleDuration || !startDate) {
         alert("Please fill out cycle duration and start date.");
@@ -110,8 +133,12 @@
         return;
       }
 
-      const protocol = { cycleDuration, startDate, compounds };
+      const protocol = { cycleDuration, startDate, compounds, notifyInjections: notify };
       localStorage.setItem("saved_protocol", JSON.stringify(protocol));
+
+      navigator.serviceWorker.ready.then(reg => {
+        reg.storage.set("saved_protocol", JSON.stringify(protocol));
+      });
 
       const calendarDiv = document.getElementById("calendarOutput");
       calendarDiv.innerHTML = "<h2>Your Cycle Calendar</h2>";

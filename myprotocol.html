@@ -4,27 +4,10 @@
   <meta charset="UTF-8">
   <title>My Protocol</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <link rel="stylesheet" href="style.css">
-  <style>
-    .protocol-box {
-      background: #1e293b;
-      border: 1px solid #334155;
-      padding: 20px;
-      border-radius: 14px;
-      margin-bottom: 20px;
-      color: #e5e7eb;
-    }
-    .protocol-title {
-      font-size: 22px;
-      font-weight: 600;
-      margin-bottom: 10px;
-    }
-    .protocol-item {
-      margin-bottom: 10px;
-      line-height: 1.5;
-      font-size: 14px;
-    }
-  </style>
+  <link rel="manifest" href="manifest.json">
+  <script src="notification-handler.js" defer></script>
 </head>
 <body>
   <div class="top-right-logo">
@@ -37,6 +20,13 @@
     <div id="protocolDisplay" class="protocol-box">
       <div class="protocol-title">Current Protocol</div>
       <div id="protocolContent">Loading...</div>
+
+      <div class="protocol-item" style="margin-top:18px;">
+        <label style="display:flex;align-items:center;gap:10px;">
+          <input id="toggleNotify" type="checkbox">
+          Enable Injection Notifications
+        </label>
+      </div>
     </div>
 
     <div class="protocol-actions">
@@ -57,9 +47,11 @@
     function loadProtocol() {
       const saved = localStorage.getItem("saved_protocol");
       const box = document.getElementById("protocolContent");
+      const notifyToggle = document.getElementById("toggleNotify");
 
       if (!saved) {
         box.innerHTML = "No protocol has been created yet.";
+        notifyToggle.checked = false;
         return;
       }
 
@@ -83,9 +75,28 @@
       });
 
       box.innerHTML = html;
+      notifyToggle.checked = protocol.notifyInjections === true;
     }
 
-    document.addEventListener("DOMContentLoaded", loadProtocol);
+    document.addEventListener("DOMContentLoaded", () => {
+      loadProtocol();
+
+      document.getElementById("toggleNotify").addEventListener("change", () => {
+        const saved = localStorage.getItem("saved_protocol");
+        if (!saved) return;
+
+        const protocol = JSON.parse(saved);
+        protocol.notifyInjections = document.getElementById("toggleNotify").checked;
+
+        localStorage.setItem("saved_protocol", JSON.stringify(protocol));
+
+        navigator.serviceWorker.ready.then(reg => {
+          reg.storage.set("saved_protocol", JSON.stringify(protocol));
+        });
+
+        alert("Notification preference updated.");
+      });
+    });
   </script>
 </body>
 </html>
