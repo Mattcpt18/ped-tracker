@@ -17,8 +17,8 @@ const PRIVATE_COMPOUND_LIST = [
   "Clenbuterol",
   "HCG",
   "Anastrozole",
-  "Letrozole",
-  "Tamoxifen",
+  "HGH",
+  "Retatrutide",
   "Clomiphene"
 ];
 
