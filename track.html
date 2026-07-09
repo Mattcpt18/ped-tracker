@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Track Protocol</title>
+  <title>Build Cycle</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="style.css">
 
@@ -16,24 +16,21 @@
   </script>
 
   <style>
-    /* Fun tikn animation */
+    /* Tikn animation */
     @keyframes tikn {
       0% { transform: scale(1) rotate(0deg); }
       30% { transform: scale(1.15) rotate(8deg); }
       60% { transform: scale(0.9) rotate(-6deg); }
       100% { transform: scale(1) rotate(0deg); }
     }
-    .tikn {
-      animation: tikn 0.4s ease-out;
-    }
+    .tikn { animation: tikn 0.4s ease-out; }
 
-    /* Smaller upper-right logo */
+    /* Small upper-right logo */
     .top-right-logo {
       position: absolute;
       top: 16px;
       right: 16px;
     }
-
     .top-right-logo img {
       width: 48px;
       height: auto;
@@ -48,7 +45,6 @@
       gap: 8px;
       margin-top: 20px;
     }
-
     .day {
       background: #1e293b;
       border: 1px solid #334155;
@@ -59,15 +55,21 @@
       min-height: 60px;
       font-size: 14px;
     }
-
     .dose-day {
       background: #38bdf8;
       color: #0f172a;
       font-weight: 600;
     }
-
     .today {
       border: 2px solid #facc15;
+    }
+
+    .row-card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      padding: 16px;
+      border-radius: 14px;
+      margin-bottom: 20px;
     }
   </style>
 </head>
@@ -80,26 +82,12 @@
   </div>
 
   <div class="track-container">
-    <h1 class="track-title">Track Protocol</h1>
+    <h1 class="track-title">Build Cycle</h1>
 
-    <!-- Compound selection -->
-    <div class="protocol-card">
-      <h2>Compound</h2>
+    <!-- 10 Compound Rows -->
+    <div id="compoundRows"></div>
 
-      <label>Select Compound:</label>
-      <select id="compoundDropdown"></select>
-
-      <label>Weekly Dose (mg):</label>
-      <input id="weeklyDose" type="number" placeholder="mg">
-
-      <label>Frequency (times per week):</label>
-      <input id="frequency" type="number" placeholder="Times per week">
-
-      <label>Dose per ml (mg/ml):</label>
-      <input id="dosePerMl" type="number" placeholder="mg/ml">
-    </div>
-
-    <!-- Cycle info -->
+    <!-- Cycle Info -->
     <div class="protocol-card">
       <h2>Cycle Info</h2>
 
@@ -111,18 +99,56 @@
     </div>
 
     <div class="protocol-actions">
-      <button onclick="buildProtocol()">Build Protocol</button>
+      <button onclick="buildCycle()">Build Cycle</button>
       <button onclick="location.href='index.html'">Back to Home</button>
     </div>
 
     <div id="calendarOutput"></div>
   </div>
 
-  <!-- Auto-sync compound list -->
+  <!-- Locked compound list -->
   <script src="compound-management.js"></script>
 
   <script>
-    // Logo click animation + return home
+    /* ------------------------------------------------------------
+       Generate 10 rows dynamically
+       ------------------------------------------------------------ */
+    const rowsContainer = document.getElementById("compoundRows");
+
+    for (let i = 1; i <= 10; i++) {
+      const row = document.createElement("div");
+      row.className = "row-card";
+
+      row.innerHTML = `
+        <h3>Compound ${i}</h3>
+
+        <label>Compound:</label>
+        <select class="compoundDropdown"></select>
+
+        <label>Weekly Dose (mg):</label>
+        <input class="weeklyDose" type="number" placeholder="mg">
+
+        <label>Frequency (times per week):</label>
+        <input class="frequency" type="number" placeholder="Times per week">
+
+        <label>Dose per ml (mg/ml):</label>
+        <input class="dosePerMl" type="number" placeholder="mg/ml">
+      `;
+
+      rowsContainer.appendChild(row);
+    }
+
+    /* ------------------------------------------------------------
+       Sync dropdowns after rows are created
+       ------------------------------------------------------------ */
+    document.addEventListener("DOMContentLoaded", () => {
+      const dropdowns = document.querySelectorAll(".compoundDropdown");
+      dropdowns.forEach(dd => updateDropdown(dd));
+    });
+
+    /* ------------------------------------------------------------
+       Logo click animation + return home
+       ------------------------------------------------------------ */
     const logo = document.getElementById("protocolLogo");
     logo.addEventListener("click", () => {
       logo.classList.remove("tikn");
@@ -134,39 +160,48 @@
     });
 
     /* ------------------------------------------------------------
-       Build Protocol + Calendar
+       Build Cycle (Calendar for all compounds)
        ------------------------------------------------------------ */
-    function buildProtocol() {
-      const compound = document.getElementById("compoundDropdown").value;
-      const weeklyDose = Number(document.getElementById("weeklyDose").value);
-      const frequency = Number(document.getElementById("frequency").value);
-      const dosePerMl = Number(document.getElementById("dosePerMl").value);
+    function buildCycle() {
       const cycleDuration = Number(document.getElementById("cycleDuration").value);
       const startDate = document.getElementById("startDate").value;
 
-      if (!compound || !weeklyDose || !frequency || !dosePerMl || !cycleDuration || !startDate) {
-        alert("Please fill out all fields.");
+      if (!cycleDuration || !startDate) {
+        alert("Please fill out cycle duration and start date.");
         return;
       }
-
-      const doseMg = weeklyDose / frequency;
-      const doseMl = (doseMg / dosePerMl).toFixed(2);
 
       const start = new Date(startDate);
       const totalDays = cycleDuration * 7;
 
-      const doseInterval = Math.floor(7 / frequency);
-
-      const doseDays = [];
-      for (let i = 0; i < totalDays; i += doseInterval) {
-        doseDays.push(i);
-      }
-
       const calendarDiv = document.getElementById("calendarOutput");
-      calendarDiv.innerHTML = "<h2>Protocol Calendar</h2>";
+      calendarDiv.innerHTML = "<h2>Cycle Calendar</h2>";
 
       const calendarGrid = document.createElement("div");
       calendarGrid.className = "calendar";
+
+      const rows = document.querySelectorAll(".row-card");
+
+      const doseMap = {}; // day → array of doses
+
+      rows.forEach(row => {
+        const compound = row.querySelector(".compoundDropdown").value;
+        const weeklyDose = Number(row.querySelector(".weeklyDose").value);
+        const frequency = Number(row.querySelector(".frequency").value);
+        const dosePerMl = Number(row.querySelector(".dosePerMl").value);
+
+        if (!compound || !weeklyDose || !frequency || !dosePerMl) return;
+
+        const doseMg = weeklyDose / frequency;
+        const doseMl = (doseMg / dosePerMl).toFixed(2);
+
+        const interval = Math.floor(7 / frequency);
+
+        for (let i = 0; i < totalDays; i += interval) {
+          if (!doseMap[i]) doseMap[i] = [];
+          doseMap[i].push({ compound, doseMg, doseMl });
+        }
+      });
 
       for (let i = 0; i < totalDays; i++) {
         const dayDate = new Date(start);
@@ -175,14 +210,15 @@
         const dayDiv = document.createElement("div");
         dayDiv.className = "day";
 
-        const isDoseDay = doseDays.includes(i);
-        if (isDoseDay) {
+        if (doseMap[i]) {
           dayDiv.classList.add("dose-day");
-          dayDiv.innerHTML = `
-            ${dayDate.toDateString()}<br>
-            Dose: ${doseMg} mg<br>
-            (${doseMl} ml)
-          `;
+
+          let html = `${dayDate.toDateString()}<br>`;
+          doseMap[i].forEach(d => {
+            html += `${d.compound}: ${d.doseMg} mg (${d.doseMl} ml)<br>`;
+          });
+
+          dayDiv.innerHTML = html;
         } else {
           dayDiv.innerHTML = dayDate.toDateString();
         }
