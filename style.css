@@ -1,4 +1,12 @@
 /* GLOBAL DARK BACKGROUND */
+html, body {
+  background-color: #0f172a !important;
+  color: #e5e7eb !important;
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
 body {
   background: #0f172a;
   color: #e5e7eb;
