@@ -33,12 +33,13 @@ body {
   }
 }
 
-/* PROTOCOL title */
+/* PROTOCOL wordmark */
 .app-title {
   color: #e5e7eb;
   font-size: 32px;
-  letter-spacing: 6px;
-  font-weight: 600;
+  letter-spacing: 6px;       /* squared, spaced look */
+  font-weight: 700;
+  margin-top: -10px;
   margin-bottom: 40px;
   text-align: center;
 }
