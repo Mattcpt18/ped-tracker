@@ -1,22 +1,50 @@
+// Locked compound list – edit only here
 const PRIVATE_COMPOUND_LIST = [
-  "Compound 1",
-  "Compound 2",
-  "Compound 3",
-  "Compound 4",
-  "Compound 5",
-  "Compound 6",
-  "Compound 7",
-  "Compound 8",
-  "Compound 9",
-  "Compound 10",
-  "Compound 11",
-  "Compound 12",
-  "Compound 13",
-  "Compound 14",
-  "Compound 15",
-  "Compound 16",
-  "Compound 17",
-  "Compound 18",
-  "Compound 19",
-  "Compound 20"
+  "Testosterone Enanthate",
+  "Testosterone Cypionate",
+  "Testosterone Propionate",
+  "Nandrolone Decanoate",
+  "Boldenone Undecylenate",
+  "Trenbolone Acetate",
+  "Trenbolone Enanthate",
+  "Drostanolone Propionate",
+  "Oxandrolone",
+  "Stanozolol",
+  "Methenolone Enanthate",
+  "Mesterolone",
+  "Metandienone",
+  "Turinabol",
+  "Clenbuterol",
+  "HCG",
+  "Anastrozole",
+  "Letrozole",
+  "Tamoxifen",
+  "Clomiphene"
 ];
+
+// Update all dropdowns using this locked list
+function updateDropdown(targetDropdown = null) {
+  const list = PRIVATE_COMPOUND_LIST;
+
+  const fill = (dropdown) => {
+    dropdown.innerHTML = `<option value="">Select a compound</option>`;
+    list.forEach(c => {
+      const option = document.createElement("option");
+      option.value = c;
+      option.textContent = c;
+      dropdown.appendChild(option);
+    });
+  };
+
+  if (targetDropdown) {
+    fill(targetDropdown);
+    return;
+  }
+
+  const dropdowns = document.querySelectorAll(".compoundDropdown");
+  dropdowns.forEach(fill);
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  updateDropdown();
+});
