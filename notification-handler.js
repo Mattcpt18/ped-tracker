@@ -1,4 +1,7 @@
 if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("service-worker.js");
+}
+if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("service-worker.js").then(async (reg) => {
     if (Notification.permission === "default") {
       await Notification.requestPermission();
