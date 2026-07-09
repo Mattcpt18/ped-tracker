@@ -1,0 +1,22 @@
+const PRIVATE_COMPOUND_LIST = [
+  "Compound 1",
+  "Compound 2",
+  "Compound 3",
+  "Compound 4",
+  "Compound 5",
+  "Compound 6",
+  "Compound 7",
+  "Compound 8",
+  "Compound 9",
+  "Compound 10",
+  "Compound 11",
+  "Compound 12",
+  "Compound 13",
+  "Compound 14",
+  "Compound 15",
+  "Compound 16",
+  "Compound 17",
+  "Compound 18",
+  "Compound 19",
+  "Compound 20"
+];
