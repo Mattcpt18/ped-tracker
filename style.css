@@ -46,7 +46,8 @@ body {
 /* CARDS */
 .protocol-card,
 .row-card,
-.protocol-box {
+.protocol-box,
+.color-legend {
   background: #1e293b;
   border: 1px solid #334155;
   padding: 16px;
@@ -57,7 +58,8 @@ body {
 /* CARD HEADERS */
 .protocol-card h2,
 .row-card h3,
-.protocol-title {
+.protocol-title,
+.color-legend h3 {
   color: #e5e7eb;
 }
 
@@ -174,4 +176,21 @@ button.secondary {
   gap: 12px;
   width: 100%;
   max-width: 320px;
+}
+
+/* COLOR LEGEND */
+.legend-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  font-size: 14px;
+  color: #e5e7eb;
+}
+
+.legend-color {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 1px solid #0f172a;
 }
